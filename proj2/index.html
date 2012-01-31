@@ -1,0 +1,1512 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta name="generator" content=
+  "HTML Tidy for Linux/x86 (vers 11 February 2007), see www.w3.org" />
+
+  <title>CS61C Spring 2012 Project 2</title>
+  <style type="text/css">
+  ol{margin:0;
+padding:0}p{margin:0}.c1{vertical-align:top;
+width:39.0pt;
+border-style:solid;
+background-color:#ffccff;
+border-color:#000000;
+border-width:1.0pt;
+padding:5.0pt 5.0pt 5.0pt 5.0pt}.c13{vertical-align:top;
+width:39.0pt;
+border-style:solid;
+border-color:#000000;
+border-width:1.0pt;
+padding:5.0pt 5.0pt 5.0pt 5.0pt}.c0{vertical-align:top;
+width:48.0pt;
+border-style:solid;
+border-color:#000000;
+border-width:1.0pt;
+padding:5.0pt 5.0pt 5.0pt 5.0pt}.c6{vertical-align:top;
+width:45.75pt;
+border-style:solid;
+border-color:#000000;
+border-width:1.0pt;
+padding:5.0pt 5.0pt 5.0pt 5.0pt}.c8{vertical-align:top;
+width:285.0pt;
+border-style:solid;
+border-color:#000000;
+border-width:1.0pt;
+padding:5.0pt 5.0pt 5.0pt 5.0pt}.c24{vertical-align:top;
+width:122.25pt;
+border-style:solid;
+border-color:#000000;
+border-width:1.0pt;
+padding:5.0pt 5.0pt 5.0pt 5.0pt}.c20{padding-left:0pt;
+line-height:1.15;
+direction:ltr;
+margin-left:36.0pt}.c2{line-height:1.0;
+text-indent:0pt;
+text-align:center;
+direction:ltr}.c29{padding-left:0pt;
+line-height:1.15;
+direction:ltr;
+margin-left:72.0pt}.c19{color:#000000;
+font-size:18pt;
+font-family:Arial;
+font-weight:bold}.c7{color:#000099;
+font-size:11pt;
+font-family:Arial;
+text-decoration:underline}.c3{line-height:1.15;
+text-indent:0pt;
+direction:ltr}.c11{line-height:1.0;
+text-indent:0pt;
+direction:ltr}.c33{color:#0000ff;
+font-size:11pt;
+font-family:Consolas}.c31{color:#ff0000;
+font-size:12pt;
+font-family:Arial}.c4{color:#000000;
+font-size:11pt;
+font-family:Arial}.c9{color:#ff0000;
+font-size:11pt;
+font-family:Arial}.c5{color:#000000;
+font-size:11pt;
+font-family:Consolas}.c16{color:#ff0000;
+font-size:11pt;
+font-family:Consolas}.c37{color:#274e13;
+font-size:11pt;
+font-family:Arial}.c36{color:#ff0000;
+font-size:13pt;
+font-family:Verdana}.c28{color:#ff0000;
+font-size:12pt;
+font-family:Verdana}.c23{color:#000000;
+font-size:24pt;
+font-family:Arial}.c17{background-color:#ffffff;
+font-weight:bold}.c12{padding-top:18.0pt;
+padding-bottom:4.0pt}.c10{font-style:italic;
+font-weight:bold}.c21{list-style-type:decimal}.c15{height:0pt}.c18{list-style-type:disc}.c26{font-style:italic}.c22{font-weight:bold}.c14{background-color:#ffccff}.c27{text-align:center}.c35{border-collapse:collapse}.c34{list-style-type:circle}.c25{background-color:#ffffff}.c32{background-color:#ffffff}.c30{background-color:#cccccc}body{color:#000000;
+font-size:11pt;
+font-family:Arial}h1{color:#000000;
+font-size:24pt;
+margin:0;
+font-family:Arial;
+font-weight:bold;
+padding:0}h2{color:#000000;
+font-size:18pt;
+margin:0;
+font-family:Arial;
+font-weight:bold;
+padding:0}h3{color:#000000;
+font-size:14pt;
+margin:0;
+font-family:Arial;
+font-weight:bold;
+padding:0}h4{color:#000000;
+font-size:12pt;
+margin:0;
+font-family:Arial;
+font-weight:bold;
+padding:0}h5{color:#000000;
+font-size:11pt;
+margin:0;
+font-family:Arial;
+font-weight:bold;
+padding:0}h6{color:#000000;
+font-size:10pt;
+margin:0;
+font-family:Arial;
+font-weight:bold;
+padding:0}
+Xbody {
+  padding: 0;
+  margin: 0;
+}
+    .Xinterior {
+      background-color: #f3f3f3;
+      padding: 0;
+      margin: 0;
+    }
+  .Xmain {
+    margin-top: 10px;
+    width: 650px;
+    background-color: white;
+    border: 1px solid #ccc;
+    padding: 60px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .Xc23 {
+    font-weight: bold;
+    text-align: left;
+  }
+  </style>
+</head>
+
+<body class="c32">
+  <div class="interior">
+    <br>
+  <div class="main">
+    <span class="c23">CS61C Project 2</span><br>
+
+<span class="c23">MIPS Instruction Set Simulator</span>
+
+<br>
+<br>
+  <h3>TA: Eric Liang (code adapted from framework by Yunsup and Andrew W.)</h3>
+  <p class="c3"><span class="c22 c36">&nbsp;</span></p>
+
+  <p class="c3"><span class="c22">Intermediate milestone due Sunday Feb 19 @ 23:59:59
+  PST</span></p>
+
+  <p class="c3"><span class="c22">Project due Feb 26 @ 23:59:59 PST</span></p>
+
+
+  <h2 class="c3 c12"><span class="c19">Background</span></h2>
+
+  <p class="c3"><span class="c4">In this project, you will create an instruction
+  interpreter for a subset of the MIPS instruction set. You&rsquo;ll provide the
+  machinery to decode and execute a couple dozen MIPS instructions. &nbsp;You're creating
+  what is effectively a miniature version of MARS, but better yet, you&rsquo;ll be able
+  to run real C programs on your MIPS simulator!</span></p>
+
+  <p class="c3"><span class="c4">&nbsp;</span></p>
+
+  <p class="c3"><span class="c4">The</span> <span class="c7"><a href=
+  "http://www.google.com/url?q=http%3A%2F%2Finst.eecs.berkeley.edu%2F~cs61c%2Fresources%2FMIPS_Green_Sheet.pdf&amp;
+sa=D&amp;
+sntz=1&amp;
+usg=AFQjCNHYPAw5-h7YOM3NbYxHACZyvlze9w">
+  MIPS green sheet</a></span> <span class="c4">provides information necessary for
+  completing this project.</span></p>
+
+  <h2 class="c3 c12"><span class="c19">Getting started</span></h2>
+
+  <p class="c3"><span class="c4">This is an individual assignment. &nbsp;All of your work
+  must be yours alone.</span></p>
+  <p></p>
+
+  <p class="c3"><span class="c4">&nbsp;</span></p>
+  <p class="c3">This project requires a functional mips-gcc to be installed. All the computers in the hive lab (330 soda) satisfy this requirement. It is recommended that you work on the hive computers remotely.</p>
+  <br>
+  <p class="c3"><span class="c5">$ ssh cs61c-<i style="color:red">XX</i>@hive<i style="color:red">N</i>.cs.berkeley.edu</span></p>
+  <br>
+
+  <p class="c3"><span class="c4">Navigate to your git repo and add the project2 skeleton as a remote. (If you mess up this step, edit .git/config to fix your git configuration manually)<span></p>
+
+  <p class="c3"><span class="c4">&nbsp;</span></p>
+
+  <p>
+$ cd ~/Git/cs61c-*
+<br>
+$ git remote add proj2-skeleton git://github.com/ucberkeley-cs61c/proj2-skeleton.git
+<br>
+<br>
+</p>
+
+  <p class="c3"><span class="c4">Pull the project skeleton into your repo, and take a look at the new files. If the skeleton is updated, you can re-run this command to pull in the latest changes.<span></p>
+  <p>
+<br>
+$ git pull proj2-skeleton master
+<br>
+</p>
+  <p class="c3"><span class="c4">&nbsp;</span></p>
+
+  <p class="c3"><span class="c4">The proj2 directory includes the following files.
+  &nbsp;You need to modify the files colored blue. &nbsp;You may find it
+  helpful to look at the files colored black. &nbsp;You definitely do not need to look at
+  the files colored red.</span></p>
+
+  <p class="c3"><span class="c4">&nbsp;</span></p>
+
+  <ol class="c18">
+    <li class="c20" value="1"><span class="c5">sim.c</span><span class="c4">: C source
+    file which contains the top level simulator. &nbsp;This file contains the main
+    function.</span></li>
+
+    <li class="c20"><span class="c22 c33">processor.c</span><span class="c4">: C source file which implements the processor.</span></li>
+
+    <li class="c20"><span class="c5">processor.h</span><span class="c4">: C header file for processor.</span></li>
+
+    <li class="c20"><span class="c22 c33">memory.c</span><span class="c4">: C source file which implements the memory interface.</span></li>
+
+    <li class="c20"><span class="c5">memory.h</span><span class="c4">: C header file for memory.</span></li>
+
+    <li class="c20"><span class="c33 c22">disassemble.c</span><span class="c37">:</span>
+    <span class="c4">C source file which implements disassemble.</span></li>
+
+    <li class="c20"><span class="c5">disassemble.h</span><span class="c4">: C header file
+    for disassembler.</span></li>
+
+    <li class="c20"><span class="c16">load_program.c</span><span class="c4">: C source
+    file which implements loading an executable file.</span></li>
+
+    <li class="c20"><span class="c16">load_program.h</span><span class="c4">: C header
+    file for program loader.</span></li>
+
+    <li class="c20"><span class="c16">elf.h</span><span class="c4">: C header file for
+    ELF definitions. (</span><span class="c7"><a href=
+    "http://www.google.com/url?q=http%3A%2F%2Fen.wikipedia.org%2Fwiki%2FExecutable_and_Linkable_Format&amp;
+sa=D&amp;
+sntz=1&amp;
+usg=AFQjCNEisMmSfg167wimWxnzPlkOuF6pNg">ELF</a></span>
+    <span class="c4">is the standard executable file format in Linux.)</span></li>
+
+    <li class="c20"><span class="c5">Makefile</span><span class="c4">: File which records
+    all dependencies.</span></li>
+
+    <li class="c20"><span class="c5">mipscode/*</span><span class="c4">: &nbsp;Assembly
+    and C source files for tests.</span></li>
+  </ol>
+
+  <h2 class="c3 c12"><span class="c19">Project</span></h2>
+
+  <h2 class="c3 c12"><span class="c4">The files provided in the start kit comprise a
+  framework for a MIPS simulator. You&rsquo;ll complete the program by adding code
+  to</span> <span class="c5">processor.c and memory.c</span> <span class="c4">to execute
+  each instruction and perform memory access. &nbsp;Additionally, you&rsquo;ll add code to</span> <span class=
+  "c5">disassemble.c</span> <span class="c4">to print out the human-readable disassembly
+  corresponding to the instruction&rsquo;s machine code. &nbsp;Your simulator must be
+  able to simulate the machine code versions of the following MIPS machine instructions.
+  &nbsp;We&rsquo;ve already implemented the pink-colored instructions for you, so you
+  have an example of an R-type, I-type, and J-type instruction.</span></h2>
+
+  <p class="c3"><span class="c4">&nbsp;</span></p>
+
+  <table cellpadding="0" cellspacing="0" class="c35">
+    <tbody>
+      <tr class="c15">
+        <td class="c24 c30">
+          <p class="c11"><span class="c5">INSTRUCTION</span></p>
+        </td>
+
+        <td class="c13 c30">
+          <p class="c2"><span class="c5">TYPE</span></p>
+        </td>
+
+        <td class="c0 c30">
+          <p class="c2"><span class="c5">OPCODE</span></p>
+        </td>
+
+        <td class="c6 c30">
+          <p class="c2"><span class="c5">FUNCT</span></p>
+        </td>
+
+        <td class="c8 c30">
+          <p class="c11"><span class="c5">OPERATION</span></p>
+        </td>
+      </tr>
+
+      <tr class="c15">
+        <td class="c24">
+          <p class="c11"><span class="c5">sll rd,rt,shamt</span></p>
+        </td>
+
+        <td class="c13">
+          <p class="c2"><span class="c5">R</span></p>
+        </td>
+
+        <td class="c0">
+          <p class="c2"><span class="c5">0x0</span></p>
+        </td>
+
+        <td class="c6">
+          <p class="c2"><span class="c5">0x0</span></p>
+        </td>
+
+        <td class="c8">
+          <p class="c11"><span class="c5">R[rd] &lt;
+- R[rt] &lt;
+&lt;
+ shamt</span></p>
+        </td>
+      </tr>
+
+      <tr class="c15">
+        <td class="c24">
+          <p class="c11"><span class="c5">srl rd,rt,shamt</span></p>
+        </td>
+
+        <td class="c13">
+          <p class="c2"><span class="c5">R</span></p>
+        </td>
+
+        <td class="c0">
+          <p class="c2"><span class="c5">0x0</span></p>
+        </td>
+
+        <td class="c6">
+          <p class="c2"><span class="c5">0x2</span></p>
+        </td>
+
+        <td class="c8">
+          <p class="c11"><span class="c5">R[rd] &lt;
+- R[rt] &gt;
+&gt;
+ shamt</span></p>
+        </td>
+      </tr>
+
+      <tr class="c15">
+        <td class="c24">
+          <p class="c11"><span class="c5">sra rd,rt,shamt</span></p>
+        </td>
+
+        <td class="c13">
+          <p class="c2"><span class="c5">R</span></p>
+        </td>
+
+        <td class="c0">
+          <p class="c2"><span class="c5">0x0</span></p>
+        </td>
+
+        <td class="c6">
+          <p class="c2"><span class="c5">0x3</span></p>
+        </td>
+
+        <td class="c8">
+          <p class="c11"><span class="c5">R[rd] &lt;
+- (signed)R[rt] &gt;
+&gt;
+
+          shamt</span></p>
+        </td>
+      </tr>
+
+      <tr>
+        <td class="c24">
+          <p class="c11"><span class="c5">jr rs</span></p>
+        </td>
+
+        <td class="c13">
+          <p class="c2"><span class="c5">R</span></p>
+        </td>
+
+        <td class="c0">
+          <p class="c2"><span class="c5">0x0</span></p>
+        </td>
+
+        <td class="c6">
+          <p class="c2"><span class="c5">0x8</span></p>
+        </td>
+
+        <td class="c8">
+          <p class="c11"><span class="c5">PC &lt;
+- R[rs]</span></p>
+        </td>
+      </tr>
+
+      <tr>
+        <td class="c24">
+          <p class="c11"><span class="c5">jalr rd,rs</span></p>
+        </td>
+
+        <td class="c13">
+          <p class="c2"><span class="c5">R</span></p>
+        </td>
+
+        <td class="c0">
+          <p class="c2"><span class="c5">0x0</span></p>
+        </td>
+
+        <td class="c6">
+          <p class="c2"><span class="c5">0x9</span></p>
+        </td>
+
+        <td class="c8">
+          <p class="c11"><span class="c5">tmp &lt;
+- PC + 4</span></p>
+
+          <p class="c11"><span class="c5">PC &lt;
+- R[rs]</span></p>
+
+          <p class="c11"><span class="c5">R[rd] &lt;
+- tmp</span></p>
+        </td>
+      </tr>
+
+      <tr class="c15">
+        <td class="c14 c24">
+          <p class="c3"><span class="c5">syscall</span></p>
+        </td>
+
+        <td class="c1">
+          <p class="c2"><span class="c5">R</span></p>
+        </td>
+
+        <td class="c0 c14">
+          <p class="c2"><span class="c5">0x0</span></p>
+        </td>
+
+        <td class="c6 c14">
+          <p class="c2"><span class="c5">0xc</span></p>
+        </td>
+
+        <td class="c8 c14">
+          <p class="c11"><span class="c5">(perform system call)</span></p>
+        </td>
+      </tr>
+
+      <tr class="c15">
+        <td class="c24">
+          <p class="c3"><span class="c5">addu rd,rs,rt</span></p>
+        </td>
+
+        <td class="c13">
+          <p class="c2"><span class="c5">R</span></p>
+        </td>
+
+        <td class="c0">
+          <p class="c2"><span class="c5">0x0</span></p>
+        </td>
+
+        <td class="c6">
+          <p class="c2"><span class="c5">0x21</span></p>
+        </td>
+
+        <td class="c8">
+          <p class="c11"><span class="c5">R[rd] &lt;
+- R[rs] + R[rt]</span></p>
+        </td>
+      </tr>
+
+      <tr class="c15">
+        <td class="c24">
+          <p class="c3"><span class="c5">subu rd,rs,rt</span></p>
+        </td>
+
+        <td class="c13">
+          <p class="c2"><span class="c5">R</span></p>
+        </td>
+
+        <td class="c0">
+          <p class="c2"><span class="c5">0x0</span></p>
+        </td>
+
+        <td class="c6">
+          <p class="c2"><span class="c5">0x23</span></p>
+        </td>
+
+        <td class="c8">
+          <p class="c11"><span class="c5">R[rd] &lt;
+- R[rs] - R[rt]</span></p>
+        </td>
+      </tr>
+
+      <tr class="c15">
+        <td class="c24">
+          <p class="c3"><span class="c5">and rd,rs,rt</span></p>
+        </td>
+
+        <td class="c13">
+          <p class="c2"><span class="c5">R</span></p>
+        </td>
+
+        <td class="c0">
+          <p class="c2"><span class="c5">0x0</span></p>
+        </td>
+
+        <td class="c6">
+          <p class="c2"><span class="c5">0x24</span></p>
+        </td>
+
+        <td class="c8">
+          <p class="c11"><span class="c5">R[rd] &lt;
+- R[rs] &amp;
+ R[rt]</span></p>
+        </td>
+      </tr>
+
+      <tr class="c15">
+        <td class="c24 c14">
+          <p class="c3"><span class="c5">or rd,rs,rt</span></p>
+        </td>
+
+        <td class="c1">
+          <p class="c2"><span class="c5">R</span></p>
+        </td>
+
+        <td class="c0 c14">
+          <p class="c2"><span class="c5">0x0</span></p>
+        </td>
+
+        <td class="c6 c14">
+          <p class="c2"><span class="c5">0x25</span></p>
+        </td>
+
+        <td class="c8 c14">
+          <p class="c11"><span class="c5">R[rd] &lt;
+- R[rs] | R[rt]</span></p>
+        </td>
+      </tr>
+
+      <tr class="c15">
+        <td class="c24">
+          <p class="c3"><span class="c5">xor rd,rs,rt</span></p>
+        </td>
+
+        <td class="c13">
+          <p class="c2"><span class="c5">R</span></p>
+        </td>
+
+        <td class="c0">
+          <p class="c2"><span class="c5">0x0</span></p>
+        </td>
+
+        <td class="c6">
+          <p class="c2"><span class="c5">0x26</span></p>
+        </td>
+
+        <td class="c8">
+          <p class="c11"><span class="c5">R[rd] &lt;
+- R[rs] ^ R[rt]</span></p>
+        </td>
+      </tr>
+
+      <tr class="c15">
+        <td class="c24">
+          <p class="c11"><span class="c5">nor rd,rs,rt</span></p>
+        </td>
+
+        <td class="c13">
+          <p class="c2"><span class="c5">R</span></p>
+        </td>
+
+        <td class="c0">
+          <p class="c2"><span class="c5">0x0</span></p>
+        </td>
+
+        <td class="c6">
+          <p class="c2"><span class="c5">0x27</span></p>
+        </td>
+
+        <td class="c8">
+          <p class="c11"><span class="c5">R[rd] &lt;
+- ~(R[rs] | R[rt])</span></p>
+        </td>
+      </tr>
+
+      <tr class="c15">
+        <td class="c24">
+          <p class="c3"><span class="c5">slt rd,rs,rt</span></p>
+        </td>
+
+        <td class="c13">
+          <p class="c2"><span class="c5">R</span></p>
+        </td>
+
+        <td class="c0">
+          <p class="c2"><span class="c5">0x0</span></p>
+        </td>
+
+        <td class="c6">
+          <p class="c2"><span class="c5">0x2a</span></p>
+        </td>
+
+        <td class="c8">
+          <p class="c11"><span class="c5">R[rd] &lt;
+- (signed)R[rs] &lt;
+
+          (signed)R[rt]</span></p>
+        </td>
+      </tr>
+
+      <tr class="c15">
+        <td class="c24">
+          <p class="c3"><span class="c5">sltu rd,rs,rt</span></p>
+        </td>
+
+        <td class="c13">
+          <p class="c2"><span class="c5">R</span></p>
+        </td>
+
+        <td class="c0">
+          <p class="c2"><span class="c5">0x0</span></p>
+        </td>
+
+        <td class="c6">
+          <p class="c2"><span class="c5">0x2b</span></p>
+        </td>
+
+        <td class="c8">
+          <p class="c11"><span class="c5">R[rd] &lt;
+- R[rs] &lt;
+ R[rt]</span></p>
+        </td>
+      </tr>
+
+      <tr>
+        <td class="c24 c14">
+          <p class="c11"><span class="c5">j address</span></p>
+        </td>
+
+        <td class="c1">
+          <p class="c2"><span class="c5">J</span></p>
+        </td>
+
+        <td class="c0 c14">
+          <p class="c2"><span class="c5">0x2</span></p>
+        </td>
+
+        <td class="c6 c14">
+          <p class="c2"><span class="c5">-</span></p>
+        </td>
+
+        <td class="c8 c14">
+          <p class="c11"><span class="c5">PC &lt;
+- {(upper 4 bits of PC+4),
+          address*4}</span></p>
+        </td>
+      </tr>
+
+      <tr>
+        <td class="c24">
+          <p class="c11"><span class="c5">jal address</span></p>
+        </td>
+
+        <td class="c13">
+          <p class="c2"><span class="c5">J</span></p>
+        </td>
+
+        <td class="c0">
+          <p class="c2"><span class="c5">0x3</span></p>
+        </td>
+
+        <td class="c6">
+          <p class="c2"><span class="c5">-</span></p>
+        </td>
+
+        <td class="c8">
+          <p class="c11"><span class="c5">R[31] &lt;
+- PC + 4</span></p>
+
+          <p class="c11"><span class="c5">PC &lt;
+- {(upper 4 bits of PC+4),
+          address*4}</span></p>
+        </td>
+      </tr>
+
+      <tr class="c15">
+        <td class="c24">
+          <p class="c3"><span class="c5">beq rs,rt,offset</span></p>
+        </td>
+
+        <td class="c13">
+          <p class="c2"><span class="c5">I</span></p>
+        </td>
+
+        <td class="c0">
+          <p class="c2"><span class="c5">0x4</span></p>
+        </td>
+
+        <td class="c6">
+          <p class="c2"><span class="c5">-</span></p>
+        </td>
+
+        <td class="c8">
+          <p class="c11"><span class="c5">if(R[rs] == R[rt])</span></p>
+
+          <p class="c11"><span class="c5">&nbsp;PC &lt;
+- PC + 4 +
+          signext(offset)*4</span></p>
+        </td>
+      </tr>
+
+      <tr class="c15">
+        <td class="c24">
+          <p class="c3"><span class="c5">bne rs,rt,offset</span></p>
+        </td>
+
+        <td class="c13">
+          <p class="c2"><span class="c5">I</span></p>
+        </td>
+
+        <td class="c0">
+          <p class="c2"><span class="c5">0x5</span></p>
+        </td>
+
+        <td class="c6">
+          <p class="c2"><span class="c5">-</span></p>
+        </td>
+
+        <td class="c8">
+          <p class="c11"><span class="c5">if(R[rs] != R[rt])</span></p>
+
+          <p class="c11"><span class="c5">&nbsp;PC &lt;
+- PC + 4 +
+          signext(offset)*4</span></p>
+        </td>
+      </tr>
+
+      <tr class="c15">
+        <td class="c24">
+          <p class="c3"><span class="c5">addiu rt,rs,imm</span></p>
+        </td>
+
+        <td class="c13">
+          <p class="c2"><span class="c5">I</span></p>
+        </td>
+
+        <td class="c0">
+          <p class="c2"><span class="c5">0x9</span></p>
+        </td>
+
+        <td class="c6">
+          <p class="c2"><span class="c5">-</span></p>
+        </td>
+
+        <td class="c8">
+          <p class="c11"><span class="c5">R[rt] &lt;
+- R[rs] + signext(imm)</span></p>
+        </td>
+      </tr>
+
+      <tr class="c15">
+        <td class="c24">
+          <p class="c3"><span class="c5">slti rt,rs,imm</span></p>
+        </td>
+
+        <td class="c13">
+          <p class="c2"><span class="c5">I</span></p>
+        </td>
+
+        <td class="c0">
+          <p class="c2"><span class="c5">0xa</span></p>
+        </td>
+
+        <td class="c6">
+          <p class="c2"><span class="c5">-</span></p>
+        </td>
+
+        <td class="c8">
+          <p class="c11"><span class="c5">R[rt] &lt;
+- (signed)R[rs] &lt;
+
+          signext(imm)</span></p>
+        </td>
+      </tr>
+
+      <tr class="c15">
+        <td class="c24">
+          <p class="c3"><span class="c5">sltiu rt,rs,imm</span></p>
+        </td>
+
+        <td class="c13">
+          <p class="c2"><span class="c5">I</span></p>
+        </td>
+
+        <td class="c0">
+          <p class="c2"><span class="c5">0xb</span></p>
+        </td>
+
+        <td class="c6">
+          <p class="c2"><span class="c5">-</span></p>
+        </td>
+
+        <td class="c8">
+          <p class="c11"><span class="c5">R[rt] &lt;
+- R[rs] &lt;
+ signext(imm)</span></p>
+        </td>
+      </tr>
+
+      <tr class="c15">
+        <td class="c24">
+          <p class="c3"><span class="c5">andi rt,rs,imm</span></p>
+        </td>
+
+        <td class="c13">
+          <p class="c2"><span class="c5">I</span></p>
+        </td>
+
+        <td class="c0">
+          <p class="c2"><span class="c5">0xc</span></p>
+        </td>
+
+        <td class="c6">
+          <p class="c2"><span class="c5">-</span></p>
+        </td>
+
+        <td class="c8">
+          <p class="c11"><span class="c5">R[rt] &lt;
+- R[rs] &amp;
+ zeroext(imm)</span></p>
+        </td>
+      </tr>
+
+      <tr class="c15">
+        <td class="c24 c14">
+          <p class="c3"><span class="c5">ori rt,rs,imm</span></p>
+        </td>
+
+        <td class="c1">
+          <p class="c2"><span class="c5">I</span></p>
+        </td>
+
+        <td class="c0 c14">
+          <p class="c2"><span class="c5">0xd</span></p>
+        </td>
+
+        <td class="c6 c14">
+          <p class="c2"><span class="c5">-</span></p>
+        </td>
+
+        <td class="c8 c14">
+          <p class="c11"><span class="c5">R[rt] &lt;
+- R[rs] | zeroext(imm)</span></p>
+        </td>
+      </tr>
+
+      <tr class="c15">
+        <td class="c24">
+          <p class="c3"><span class="c5">xori rt,rs,imm</span></p>
+        </td>
+
+        <td class="c13">
+          <p class="c2"><span class="c5">I</span></p>
+        </td>
+
+        <td class="c0">
+          <p class="c2"><span class="c5">0xe</span></p>
+        </td>
+
+        <td class="c6">
+          <p class="c2"><span class="c5">-</span></p>
+        </td>
+
+        <td class="c8">
+          <p class="c11"><span class="c5">R[rt] &lt;
+- R[rs] ^ zeroext(imm)</span></p>
+        </td>
+      </tr>
+
+      <tr class="c15">
+        <td class="c24">
+          <p class="c3"><span class="c5">lui rt,imm</span></p>
+        </td>
+
+        <td class="c13">
+          <p class="c2"><span class="c5">I</span></p>
+        </td>
+
+        <td class="c0">
+          <p class="c2"><span class="c5">0xf</span></p>
+        </td>
+
+        <td class="c6">
+          <p class="c2"><span class="c5">-</span></p>
+        </td>
+
+        <td class="c8">
+          <p class="c11"><span class="c5">R[rt] &lt;
+- imm &lt;
+&lt;
+ 16</span></p>
+        </td>
+      </tr>
+
+      <tr>
+        <td class="c24">
+          <p class="c11"><span class="c5">lb rt,offset(rs)</span></p>
+        </td>
+
+        <td class="c13">
+          <p class="c2"><span class="c5">I</span></p>
+        </td>
+
+        <td class="c0">
+          <p class="c2"><span class="c5">0x20</span></p>
+        </td>
+
+        <td class="c6">
+          <p class="c2"><span class="c5">-</span></p>
+        </td>
+
+        <td class="c8">
+          <p class="c11"><span class="c5">R[rt] &lt;
+-
+          signext(LoadMem(R[rs]+signext(offset), byte))</span></p>
+        </td>
+      </tr>
+
+      <tr>
+        <td class="c24">
+          <p class="c11"><span class="c5">lh rt,offset(rs)</span></p>
+        </td>
+
+        <td class="c13">
+          <p class="c2"><span class="c5">I</span></p>
+        </td>
+
+        <td class="c0">
+          <p class="c2"><span class="c5">0x21</span></p>
+        </td>
+
+        <td class="c6">
+          <p class="c2"><span class="c5">-</span></p>
+        </td>
+
+        <td class="c8">
+          <p class="c11"><span class="c5">R[rt] &lt;
+-
+          signext(LoadMem(R[rs]+signext(offset), half))</span></p>
+        </td>
+      </tr>
+
+      <tr class="c15">
+        <td class="c24">
+          <p class="c3"><span class="c5">lw rt,offset(rs)</span></p>
+        </td>
+
+        <td class="c13">
+          <p class="c2"><span class="c5">I</span></p>
+        </td>
+
+        <td class="c0">
+          <p class="c2"><span class="c5">0x23</span></p>
+        </td>
+
+        <td class="c6">
+          <p class="c2"><span class="c5">-</span></p>
+        </td>
+
+        <td class="c8">
+          <p class="c11"><span class="c5">R[rt] &lt;
+- LoadMem(R[rs]+signext(offset),
+          word)</span></p>
+        </td>
+      </tr>
+
+      <tr>
+        <td class="c24">
+          <p class="c11"><span class="c5">lbu rt,offset(rs)</span></p>
+        </td>
+
+        <td class="c13">
+          <p class="c2"><span class="c5">I</span></p>
+        </td>
+
+        <td class="c0">
+          <p class="c2"><span class="c5">0x24</span></p>
+        </td>
+
+        <td class="c6">
+          <p class="c2"><span class="c5">-</span></p>
+        </td>
+
+        <td class="c8">
+          <p class="c11"><span class="c5">R[rt] &lt;
+-
+          zeroext(LoadMem(R[rs]+signext(offset), byte))</span></p>
+        </td>
+      </tr>
+
+      <tr>
+        <td class="c24">
+          <p class="c11"><span class="c5">lhu rt,offset(rs)</span></p>
+        </td>
+
+        <td class="c13">
+          <p class="c2"><span class="c5">I</span></p>
+        </td>
+
+        <td class="c0">
+          <p class="c2"><span class="c5">0x25</span></p>
+        </td>
+
+        <td class="c6">
+          <p class="c2"><span class="c5">-</span></p>
+        </td>
+
+        <td class="c8">
+          <p class="c11"><span class="c5">R[rt] &lt;
+-</span></p>
+
+          <p class="c11"><span class="c5">zeroext(LoadMem(R[rs]+signext(offset),
+          half))</span></p>
+        </td>
+      </tr>
+
+      <tr>
+        <td class="c24">
+          <p class="c11"><span class="c5">sb rt,offset(rs)</span></p>
+        </td>
+
+        <td class="c13">
+          <p class="c2"><span class="c5">I</span></p>
+        </td>
+
+        <td class="c0">
+          <p class="c2"><span class="c5">0x28</span></p>
+        </td>
+
+        <td class="c6">
+          <p class="c2"><span class="c5">-</span></p>
+        </td>
+
+        <td class="c8">
+          <p class="c11"><span class="c5">StoreMem(R[rs]+signext(offset)], byte,
+          R[rt])</span></p>
+        </td>
+      </tr>
+
+      <tr>
+        <td class="c24">
+          <p class="c11"><span class="c5">sh rt,offset(rs)</span></p>
+        </td>
+
+        <td class="c13">
+          <p class="c2"><span class="c5">I</span></p>
+        </td>
+
+        <td class="c0">
+          <p class="c2"><span class="c5">0x29</span></p>
+        </td>
+
+        <td class="c6">
+          <p class="c2"><span class="c5">-</span></p>
+        </td>
+
+        <td class="c8">
+          <p class="c11"><span class="c5">StoreMem(R[rs]+signext(offset)], half,
+          R[rt])</span></p>
+        </td>
+      </tr>
+
+      <tr class="c15">
+        <td class="c24">
+          <p class="c3"><span class="c5">sw rt,offset(rs)</span></p>
+        </td>
+
+        <td class="c13">
+          <p class="c2"><span class="c5">I</span></p>
+        </td>
+
+        <td class="c0">
+          <p class="c2"><span class="c5">0x2b</span></p>
+        </td>
+
+        <td class="c6">
+          <p class="c2"><span class="c5">-</span></p>
+        </td>
+
+        <td class="c8">
+          <p class="c11"><span class="c5">StoreMem(R[rs]+signext(offset)], word,
+          R[rt])</span></p>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2 class="c3 c12"><span class="c4">If you have any questions about the semantics of
+  the instructions, consult P&amp;
+H (4th ed.) Section 2.9 and Appendix B, particularly if
+  you find our pseudocode for loads and stores to be confusing. &nbsp;(The first argument
+  to</span> <span class="c5">LoadMem</span> <span class="c4">and</span> <span class=
+  "c5">StoreMem</span> <span class="c4">in our pseudocode is the memory address.
+  &nbsp;The second argument to both</span> <span class="c5">LoadMem</span> <span class=
+  "c4">and</span> <span class="c5">StoreMem</span> <span class="c4">is the width of the
+  access. &nbsp;The third argument to</span> <span class="c5">StoreMem</span>
+  <span class="c4">is the store data.)</span></h2>
+
+  <p class="c3"><span class="c4">&nbsp;</span></p>
+
+<p>
+ The MIPS system you&rsquo;re implementing is little-endian. &nbsp;Look at P&amp;
+H (4th edition) page B-43 for further information on endianness (byte order). &nbsp;We chose little endian because the host machines (x86 hive computers) are little endian, and this avoids some complexity for sub-word loads and stores.
+
+ </p>
+ <br>
+  <p class="c3"><span class="c4">In our variant of MIPS,</span> <span class=
+  "c5">beq</span> <span class="c4">and</span> <span class="c5">bne</span> <span class=
+  "c4">are</span> <span class="c4 c26">not</span> <span class="c4">delayed branches.
+  &nbsp;(If you don&rsquo;t know what that means, just ignore it;
+ your default assumption
+  about the behavior of branches is probably correct for this project. &nbsp;We&rsquo;ll
+  talk about this topic later in the semester.)</span></p>
+<br>
+  <h2 class="c3 c12"><span class="c4">Initially, you will be able to run a program called
+  &ldquo;
+</span><span class="c5">simple</span><span class="c4">&rdquo;
+, which only uses
+  the pink colored instructions, by running the following commands:</span></h2>
+
+  <p class="c3"><span class="c5">&nbsp;</span></p>
+
+  <p class="c3"><span class="c5">$ cd ~/Git/cs61c-*/proj2</span></p>
+
+  <p class="c3"><span class="c5">$ make</span></p>
+
+  <p class="c3"><span class="c5">$ ./mips-sim mipscode/simple</span></p>
+
+  <p class="c3"><span class="c5">Hello, world!</span></p>
+
+  <p class="c3"><span class="c5">exiting the simulator</span></p>
+
+  <h2 class="c3 c12"><span class="c19">Framework code</span></h2>
+
+  <h2 class="c3 c12"><span class="c4">The framework code we&rsquo;ve provided begins by
+  doing the following.</span></h2>
+
+  <ol class="c21">
+    <li class="c20" value="1"><span class="c4">It reads the executable program binary,
+    whose filename is specified on the command line, into the simulated memory, starting
+    at address 0x00001000.</span></li>
+
+    <li class="c20"><span class="c4">It initializes all 32 MIPS registers to 0 and sets
+    the program counter (PC) to 0x00001000.</span></li>
+
+    <li class="c20"><span class="c4">It sets flags that govern how the program interacts
+    with the user. &nbsp;Depending on the options specified on the command line, the
+    simulator will either show a dissassembly dump of the program on the command line, or
+    it will execute the program.</span></li>
+  </ol>
+
+  <p class="c3"><span class="c4">&nbsp;</span></p>
+
+  <p class="c3"><span class="c4">It then enters the main simulation loop, which simply
+  calls execute_one_inst() repeatedly until the simulation is complete.
+  &nbsp;execute_one_inst() performs the following tasks:</span></p>
+
+  <ol class="c21">
+
+    <li class="c20"><span class="c4">It fetches an instruction from memory, using the PC
+    as the address.</span></li>
+
+    <li class="c20"><span class="c4">It examines the opcode to determine what instruction
+    was fetched.</span></li>
+
+    <li class="c20"><span class="c4">It executes the instruction and updates the
+    PC.</span></li>
+  </ol>
+
+  <p class="c3"><span class="c4">&nbsp;</span></p>
+
+  <p class="c3"><span class="c4">The framework supports a handful of command-line
+  options:</span></p>
+
+  <ol class="c18">
+    <li class="c20" value="1"><span class="c5">-i</span> <span class="c4">runs the
+    simulator in &ldquo;
+interactive mode,&rdquo;
+ in which the simulator executes an
+    instruction each time the Enter key is pressed. &nbsp;The disassembly of each
+    executed instruction is printed.</span></li>
+
+    <li class="c20" value="1"><span class="c5">-t</span> <span class="c4">runs the
+      simulator in &ldquo;
+tracing mode,&rdquo;
+ in which each instruction executed is printed.</span></li>
+
+    <li class="c20"><span class="c5">-r</span> <span class="c4">instructs the simulator
+    to print the contents of all 32 registers after each instruction is executed.
+    &nbsp;It&rsquo;s most useful when combined with the -i flag.</span></li>
+
+    <li class="c20"><span class="c5">-d</span> <span class="c4">instructs the simulator
+    to disassemble the entire program, then quit.</span></li>
+  </ol>
+
+  <h2 class="c3 c12"><span class="c19">Your Job</span></h2>
+
+  <h2 class="c3 c12"><span class="c4">Your job is to complete the implementations of
+  the</span> <span class="c5">disassemble()</span> <span class="c4">function in</span>
+  <span class="c5">disassemble.c</span><span class="c4">, the</span> <span class=
+  "c5">execute_one_inst()</span> <span class="c4">function in</span> <span class=
+  "c5">processor.c</span><span class="c4">, and the load_mem() store_mem() access_ok() functions in memory.c. &nbsp;Right now, they only operate correctly
+  for the</span> <span class="c5">or</span><span class="c4">,</span> <span class=
+  "c5">ori</span><span class="c4">,</span> <span class="c5">j</span><span class="c4">,
+  and</span> <span class="c5">syscall</span> <span class="c4">instructions. &nbsp;By the
+  time you&rsquo;re finished, they should handle all of the instructions in the table
+  above.</span></h2>
+
+  <h2 class="c3 c12"><span class="c4">Your</span> <span class="c4 c22">first task</span>
+  <span class="c4">will be to implement the disassembler. &nbsp;(</span><span class=
+  "c4 c22">15 points</span><span class="c4">, due at the intermediate
+  milestone)</span></h2>
+
+  <ol class="c18">
+    <li class="c20" value="1"><span class="c4">Print the instruction name. &nbsp;If the
+    instruction has arguments, print a tab (\t).</span></li>
+
+    <li class="c20"><span class="c4">Print all arguments, following the order and
+    formatting given in the</span> <span class="c5">INSTRUCTION</span> <span class=
+    "c4">column of the table above.</span></li>
+  </ol>
+
+  <ol class="c34">
+    <li class="c29" value="1"><span class="c4">Arguments are generally comma-separated
+    (</span><span class="c5">lw</span><span class="c4">/</span><span class=
+    "c5">sw</span><span class="c4">, however, also use parentheses), but are</span>
+    <span class="c4 c22">not</span> <span class="c4">separated by spaces.</span></li>
+
+    <li class="c29"><span class="c4">Register arguments are printed as a $ followed by
+    the register number, in decimal (e.g. $0 or $31).</span></li>
+
+    <li class="c29"><span class="c4">Zero-extended immedates (e.g. for</span>
+    <span class="c5">ori</span><span class="c4">) are printed as lowercase hexadecimal
+    numbers with a leading 0x but without extra leading zeros (e.g. 0x0 or
+    0xffff).</span></li>
+
+    <li class="c29"><span class="c4">Jump addresses should be printed like zero-extended
+    immediates, but multiplied by 4 first. &nbsp;(Assume the upper 4 bits of PC+4 are
+    zero.)</span></li>
+
+    <li class="c29"><span class="c4">Sign-extended immediates (e.g. for</span>
+    <span class="c5">addiu</span><span class="c4">,</span> <span class=
+    "c5">sw</span><span class="c4">, or</span> <span class="c5">beq</span><span class=
+    "c4">) are printed as signed decimal numbers (e.g. -12 or 48). &nbsp;For branch
+    offsets, multiply the offset by 4.</span></li>
+
+    <li class="c29"><span class="c4">Shift amounts (e.g. for</span> <span class=
+    "c5">sll</span><span class="c4">) are printed as unsigned decimal numbers (e.g. 0 or
+    31).</span></li>
+  </ol>
+
+  <ol class="c18">
+    <li class="c20" value="3"><span class="c4">Print a newline (\n) at the end of an
+    instruction.</span></li>
+
+    <li class="c20"><span class="c4">We will be using an autograder to grade this task.
+    &nbsp;</span><span class="c4 c26">If your output differs from ours due to formatting
+    errors, you will</span> <span class="c4 c10">not</span> <span class="c4 c26">receive
+    credit.</span></li>
+
+    <li class="c20"><span class="c4">We have provided a disassembly test for you.
+    &nbsp;</span><span class="c4 c26">Since a test is only covering a subset of possible
+    scenarios, however, passing this test does</span> <span class="c4 c10">not</span>
+    <span class="c4 c26">mean that your code is bug free. &nbsp;You should identify the
+    corner cases and test them yourself.</span></li>
+  </ol>
+
+  <p class="c3"><span class="c4">&nbsp;</span></p>
+
+  <p class="c3"><span class="c4">Run the disassembly test by typing in
+  &ldquo;
+</span><span class="c5">make disasmtest&rdquo;
+</span><span class="c4">. &nbsp;If
+  your disassembly matches the output, you will get a &ldquo;
+</span><span class=
+  "c5">DISASSEMBLY TEST PASSED!</span><span class="c4">&rdquo;
+ message.</span></p>
+
+  <p class="c3"><span class="c4">&nbsp;</span></p>
+
+  <p class="c3"><span class="c5">$ cd ~/Git/cs61c-*/proj2</span></p>
+
+  <p class="c3"><span class="c5">$ make disasmtest</span></p>
+
+  <p class="c3"><span class="c5">./mips-sim -d mipscode/insts &gt;
+ insts.dump</span></p>
+
+  <p class="c3"><span class="c5">DISASSEMBLY TEST PASSED!</span></p>
+
+  <p class="c3"><span class="c5">&nbsp;</span></p>
+
+  <p class="c3"><span class="c4">If your disassembly does not match the output, you will
+  get the difference between the reference output and your output, and a
+  &ldquo;
+</span><span class="c5">DISASSEMBLY TEST FAILED!</span><span class="c4">&rdquo;
+
+  message. &nbsp;Make sure you pass this test before submitting your first
+  task.</span></p>
+
+  <p class="c3"><span class="c5">&nbsp;</span></p>
+
+  <p class="c3"><span class="c5">$ cd ~/Git/cs61c-*/proj2</span></p>
+
+  <p class="c3"><span class="c5">$ make disasmtest</span></p>
+
+  <p class="c3"><span class="c5">./mips-sim -d mipscode/insts &gt;
+ insts.dump</span></p>
+
+  <p class="c3"><span class="c5">56c56</span></p>
+
+  <p class="c3"><span class="c5">&lt;
+ 000010dc:
+  addiu&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$30,$0,11</span></p>
+
+  <p class="c3"><span class="c5">---</span></p>
+
+  <p class="c3"><span class="c5">&gt;
+ 000010dc:
+  addiu&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$30,$0,0x11</span></p>
+
+  <p class="c3"><span class="c5">66c66</span></p>
+
+  <p class="c3"><span class="c5">&lt;
+ 00001104:
+  bne&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$4,$5,44</span></p>
+
+  <p class="c3"><span class="c5">---</span></p>
+
+  <p class="c3"><span class="c5">&gt;
+ 00001104:
+  bne&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$4,$5, 44</span></p>
+
+  <p class="c3"><span class="c5">DISASSEMBLY TEST FAILED!</span></p>
+
+  <p class="c3"><span class="c4">&nbsp;</span></p>
+
+  <p class="c3"><span class="c9 c25">STOP. &nbsp;You have now done enough work for the intermediate checkpoint, due on the 19th. For the intermediate milestone, tag the point in history you want to submit as "proj2-checkpoint" and push your changes to github:</span></p>
+
+  <p class="c3"><span class="c9 c25">&nbsp;</span></p>
+
+  <p class="c3"><span class="c16 c25">$ git tag -f proj2-checkpoint HEAD</span></p>
+  <p class="c3"><span class="c16 c25">$ git push</span></p>
+  <p class="c3"><span class="c16 c25">$ git push --tags</span></p>
+
+  <p class="c3"><span class="c9 c17">&nbsp;</span></p>
+
+  <p class="c3"><span class="c9 c25">Double check that your tag appears on github (under the Tags tab of the repository view). Only changes to <b>proj2/disassemble.c</b> will be considered
+    by the autograder for the checkpoint. If you want to update your submission, just repeat the git tag -f command and push the updated tag. We will take a snapshot of all git repos at each submit deadline and again for late submissions. If you update the tag after the deadline, your project will be considered late. Push early and often!</span></p>
+
+  <br>
+  <p class="c3"><span class="c4">Your</span> <span class="c4 c22">second task</span>
+  <span class="c4">will be to actually implement the remaining instructions in the
+  processor. &nbsp;(</span><span class="c4 c22">85 points</span><span class="c4">, due at
+  the end)</span></p>
+
+  <p class="c3"><span class="c4">&nbsp;</span></p>
+
+  <p class="c3"><span class="c4">One issue we have not addressed thus far is address
+  alignment for loads and stores. &nbsp;The simulator should abort if
+  the PC is misaligned (i.e. not divisible by 4), or outside of the range [0,MEM_SIZE).
+  &nbsp;The same behavior should occur for misaligned loads and stores.
+  &nbsp;</span><span class="c5">lw</span> <span class="c4">and</span> <span class=
+  "c5">sw</span> <span class="c4">require 4-byte alignment, like the PC.
+  &nbsp;</span><span class="c5">lh</span><span class="c4">,</span> <span class=
+  "c5">lhu</span><span class="c4">, and</span> <span class="c5">sh</span> <span class=
+  "c4">require 2-byte alignment. &nbsp;</span><span class="c5">lb</span><span class=
+  "c4">,</span> <span class="c5">lbu</span><span class="c4">, and</span> <span class=
+  "c5">sb</span> <span class="c4">are always properly aligned. &nbsp;For misaligned or
+  out-of-range addresses, you must have access_ok() return 0 in memory.c, which will cause the simulator to print an error message and abort.
+
+  <p class="c3"><span class="c4">&nbsp;</span></p>
+
+  <p class="c3"><span class="c4">We have provided a simple self-checking assembly test
+  that tests several of the instructions. &nbsp;However,</span> <span class="c4 c22">the
+  test is not exhaustive</span> <span class="c4">and does not exercise every instruction.
+  &nbsp;Here&rsquo;s how to run the test. &nbsp;(The output is from a working
+  processor.)</span></p>
+
+  <p class="c3"><span class="c4">&nbsp;</span></p>
+
+  <p class="c3"><span class="c5">$ cd ~/Git/cs61c-*/proj2</span></p>
+
+  <p class="c3"><span class="c5">$ make runtest</span></p>
+
+  <p class="c3"><span class="c5">./mips-sim -r mipscode/insts &gt;
+ insts.trace</span></p>
+
+  <p class="c3"><span class="c5">RUN TEST PASSED!</span></p>
+
+  <p class="c3"><span class="c4">&nbsp;</span></p>
+
+  <p class="c3"><span class="c4">We have provided a few more tests and the ability to
+  write your own. &nbsp;We described</span> <span class="c5">simple</span> <span class=
+  "c4">above, which prints out &ldquo;
+Hello, world!&rdquo;
+, and is written in assembly.
+  &nbsp;</span><span class="c9 c22">You can, and indeed</span> <span class=
+  "c9 c10">should</span><span class="c9 c22">, write your own assembly tests to test
+  specific instructions and their corner cases.</span> <span class=
+  "c4">&nbsp;Here&rsquo;s an example of how to do so:</span></p>
+
+  <p class="c3"><span class="c4">&nbsp;</span></p>
+
+  <ol class="c21">
+    <li class="c20" value="1"><span class="c4">Create the new assembly file in the</span>
+    <span class="c5">mipscode</span> <span class="c4">directory. &nbsp;(Use</span>
+    <span class="c5">mipscode/simple.s</span> <span class="c4">as a template.)
+    &nbsp;Let&rsquo;s assume your test is in</span> <span class=
+    "c5">mipscode/foo.s</span><span class="c4">.</span></li>
+
+    <li class="c20"><span class="c4">Add the base name of the test to the list of</span>
+    <span class="c5">ASM_TESTS</span> <span class="c4">in the</span> <span class=
+    "c5">Makefile</span><span class="c4">. &nbsp;To do this, just add</span> <span class=
+    "c5">foo</span> <span class="c4">to the end of line 4.</span></li>
+  </ol>
+
+  <p class="c3"><span class="c4">&nbsp;</span></p>
+
+  <p class="c3"><span class="c4">Now build your assembly test, and then run it by typing
+  in the following commands:</span></p>
+
+  <p class="c3"><span class="c4">&nbsp;</span></p>
+
+  <p class="c3"><span class="c5">$ cd ~/Git/cs61c-*/proj2</span></p>
+
+  <p class="c3"><span class="c5">$ make</span></p>
+
+  <p class="c3"><span class="c5">$ ./mips-sim mipscode/foo</span></p>
+
+  <p class="c3"><span class="c4">&nbsp;</span></p>
+
+  <p class="c3"><span class="c4">Additionally, you can write test programs in C and run
+  them on your simulator, once you&rsquo;ve implemented all of the instructions! &nbsp;We
+  provided</span> <span class="c5">ackermann</span><span class="c4">, which computes the
+  Ackermann function A(m,n) recursively. &nbsp;It will not work until you have
+  implemented the processor fully. &nbsp;This is a sample run of the program on a correct
+  processor:</span></p>
+
+  <p class="c3"><span class="c4">&nbsp;</span></p>
+
+  <p class="c3"><span class="c5">$ ./mips-sim mipscode/ackermann</span></p>
+
+  <p class="c3"><span class="c5">A(3, 3) = 61</span></p>
+
+  <p class="c3"><span class="c5">exiting the simulator</span></p>
+
+  <p class="c3"><span class="c4">&nbsp;</span></p>
+
+  <p class="c3"><span class="c4">To write your own C tests, stick to a subset of C that
+  doesn&rsquo;t use floating-point. &nbsp;Additionally, don&rsquo;t use any C library
+  functions. &nbsp;Look at</span> <span class="c5">ackermann.c</span> <span class=
+  "c4">for an example of how to print things in our restricted environment.
+  &nbsp;Here&rsquo;s how to do write a C test:</span></p>
+
+  <p class="c3"><span class="c4">&nbsp;</span></p>
+
+  <ol class="c21">
+    <li class="c20" value="1"><span class="c4">Create the new C file in the</span>
+    <span class="c5">mipscode</span> <span class="c4">directory. &nbsp;(Use</span>
+    <span class="c5">mipscode/ackermann.c</span> <span class="c4">as a template.)
+    &nbsp;Let&rsquo;s assume your test is in</span> <span class=
+    "c5">mipscode/bar.c</span><span class="c4">.</span></li>
+
+    <li class="c20"><span class="c4">Add the base name of the test to the list of</span>
+    <span class="c5">C_TESTS</span> <span class="c4">in the</span> <span class=
+    "c5">Makefile</span><span class="c4">. &nbsp;To do this, just add</span> <span class=
+    "c5">bar</span> <span class="c4">to the end of line 5.</span></li>
+  </ol>
+
+  <p class="c3"><span class="c4">&nbsp;</span></p>
+
+  <p class="c3"><span class="c4">Now build your C program, and then run it by typing in
+  the following commands:</span></p>
+
+  <p class="c3"><span class="c4">&nbsp;</span></p>
+
+  <p class="c3"><span class="c5">$ cd ~/Git/cs61c-*/proj2</span></p>
+
+  <p class="c3"><span class="c5">$ make</span></p>
+
+  <p class="c3"><span class="c5">$ ./mips-sim mipscode/bar</span></p>
+
+  <p class="c3"><span class="c5">&nbsp;</span></p>
+
+  <p class="c3"><span class="c9">For the final results, only changes to the files</span> <span class="c16 c22">proj2/disassemble.c</span><span class=
+  "c9">, </span> <span class="c16 c22">proj2/processor.c,</span><span class="c9"> and </span><span class="c16 c22">proj2/memory.c</span><span class="c9"> will be considered by the autograder. Submit by pushing a tagged commit to your github account: </span></p>
+
+  <p class="c3"><span class="c9">&nbsp;</span></p>
+
+  <p class="c3"><span class="c16">$ git tag -f proj2-submit HEAD</span></p>
+  <p class="c3"><span class="c16">$ git push</span></p>
+  <p class="c3"><span class="c16">$ git push --tags</span></p>
+
+  <br>
+  <p class="c3"><span class="c9">Again, check that your changes are tagged correctly on your github account.</span></p>
+
+  <p class="c3"><span class="c5">&nbsp;</span></p>
+  </div><br></div>
+</body>
+</html>
+
