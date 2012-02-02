@@ -1,11 +1,11 @@
 /*
   CS 61C Project1: Small World
 
-  Name:
-  Login:
+  Name: Hairan Zhu
+  Login: cs61c-eu
 
-  Name:
-  Login:
+  Name: Benjamin Han
+  Login: cs61c-mm
  */
 
 
