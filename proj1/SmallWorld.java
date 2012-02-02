@@ -46,15 +46,19 @@ public class SmallWorld {
     public static final String DENOM_PATH = "denom.txt";
 
     // Example enumerated type, used by EValue and Counter example
-    public static enum ValueUse {EDGE};
+    // The number of starting vertices
+    public static enum ValueUse {STARTS};
 
     // Example writable type
     public static class EValue implements Writable {
-        public ValueUse use;
-        public long value;
 
-        public EValue(ValueUse use, long value) {
-            this.use = use;
+        public long neighbor;
+
+        public HashTable<keyname, int> weights = new HashTable<keyname, int>();
+
+        //public EValue(Value neighbor, long value) {
+	public EValue(long destination,)
+            this.neighbor = position;
             this.value = value;
         }
 
@@ -111,16 +115,46 @@ public class SmallWorld {
             }
         }
 
-        /* Will need to modify to not loose any edges. */
+        /* Will need to modify to not lose any edges. */
         @Override
         public void map(LongWritable key, LongWritable value, Context context)
                 throws IOException, InterruptedException {
             // Send edge forward only if part of random subset
+	    context.write(key, value);
             if (Math.random() < 1.0/denom) {
+		value = new LongWritable(-1);
+		context.getCount(starts).increment(1);
                 context.write(key, value);
             }
             // Example of using a counter (counter tagged by EDGE)
-            context.getCounter(ValueUse.EDGE).increment(1);
+            //context.getCounter(ValueUse.EDGE).increment(1);
+        }
+    }
+
+public static class LoadReduce extends Reducer<LongWritable, LongWritable, LongWritable, NodeInfo> {
+        /** Actual reduce function.
+         * 
+         * @param key Word.
+         * @param values Values for this word (partial counts).
+         * @param context ReducerContext object for accessing output,
+         *                configuration information, etc.
+         */
+        @Override 
+        public void reduce(LongWritable key, Iterable<LongWritable> values,
+                Context context) throws IOException, InterruptedException {
+	    boolean isStart = false;
+	    for (LongWritable val : values) {
+		if (val.get() == -1) {
+		    isStart = true;
+		}	
+	    }
+	    for (LongWritable val : values) {
+		if (val.get() != -1 ) {
+		    //ArrayList<
+		    NodeInfo info = new NodeInfo(val, #arrayWithWeights);//
+		    context.write(key, info);
+		}		
+	    }
         }
     }
 
