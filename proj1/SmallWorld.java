@@ -299,7 +299,7 @@ public class SmallWorld {
 		@Override
 		public void reduce(LongWritable key, Iterable<LongWritable> values,
 				Context context) throws IOException, InterruptedException {
-			long[] counts = new long[MAX_ITERATIONS];
+			long[] counts = new long[MAX_ITERATIONS + 1];
 			for (LongWritable val : values) {
 				counts[(int) val.get()] += 1; //do the counting
 			}
