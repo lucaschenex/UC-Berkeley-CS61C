@@ -141,7 +141,7 @@ public class SmallWorld {
 		public void map(LongWritable key, LongWritable value, Context context)
 				throws IOException, InterruptedException {
 			long sourceId = value.get();
-			context.write(key, new EValue(ValueUse.DESTINATION, sourceId));
+			context.write(key, new EValue(ValueUse.DESTINATION, value.get())); //propagate graph
 			if (Math.random() < 1.0 / denom) {
 				context.write(key, new EValue(ValueUse.DISTANCE, 0, sourceId));
 			} else {
@@ -231,8 +231,8 @@ public class SmallWorld {
 			for (EValue val : values) {
 				if (val.getType() == ValueUse.DISTANCE) {
 					long origin = val.getOrigin();
+					long distance = distances.get(origin);
 					for (long destination : destinations) {
-						long distance = distances.get(origin);
 						if (distance < MAX_DISTANCE) { //only update if current destination is reachable
 							context.write(new LongWritable(destination),
 									new EValue(ValueUse.DISTANCE, distance + 1, origin));
