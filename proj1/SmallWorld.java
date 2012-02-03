@@ -38,19 +38,18 @@ import org.apache.hadoop.util.GenericOptionsParser;
 
 public class SmallWorld {
 
-	// Maximum dept for any breadth-first search
+	/** Maximum depth for any breadth-first search. */
 	public static final int MAX_ITERATIONS = 5;
 
 	// Skeleton code uses this to share denom cmd-line arg across cluster
 	public static final String DENOM_PATH = "denom.txt";
 
-	// Example enumerated type, used by EValue and Counter example
-	// The number of starting vertices
+	/** What type of value. */
 	public static enum ValueUse {
 		DESTINATION, DISTANCE, BLANK
 	};
 
-	// Example writable type
+	/** Stores information for each vertex in the graph. */
 	public static class EValue implements Writable {
 
 		/** What this value represents. */
@@ -60,19 +59,17 @@ public class SmallWorld {
 		/** The second value. If type == DISTANCE, this is origin id. */
 		public long value2;
 
-		
+		/** Hadoop requires a default constructor. */
 		public EValue() {
-			this.type = ValueUse.BLANK;
-			this.value1 = -1;
-			this.value2 = -1;
-		}
-		
-		public EValue(ValueUse type, long value) {
-			this.type = type;
-			this.value1 = value;
-			this.value2 = -1;
+			this(ValueUse.BLANK, -1, -1);
 		}
 
+		/** For destination type. */
+		public EValue(ValueUse type, long value) {
+			this(type, value, -1);
+		}
+
+		/** For distance type. */
 		public EValue(ValueUse type, long value1, long value2) {
 			this.type = type;
 			this.value1 = value1;
@@ -108,11 +105,7 @@ public class SmallWorld {
 		}
 	}
 
-	/*
-	 * This example mapper loads in all edges but only propagates a subset. You
-	 * will need to modify this to propagate all edges, but it is included to
-	 * demonstate how to read & use the denom argument.
-	 */
+	/** Loads map. */
 	public static class LoaderMap extends
 			Mapper<LongWritable, LongWritable, LongWritable, EValue> {
 		public long denom;
@@ -140,7 +133,8 @@ public class SmallWorld {
 			}
 		}
 
-		/* Select vertices as starting points with probability 1/denom. */
+		/* Select vertices as starting points with probability 1/denom.
+		 * Those get marked with distance 0. */
 		@Override
 		public void map(LongWritable key, LongWritable value, Context context)
 				throws IOException, InterruptedException {
@@ -229,12 +223,12 @@ public class SmallWorld {
 					}
 				}
 			}
-			// update distance for successors
+			// update distance for successors, one more than current
 			for (EValue val : values) {
 				if (val.getType() == ValueUse.DISTANCE) {
 					for (long destination : destinations) {
 						context.write(key, new EValue(ValueUse.DISTANCE,
-								distances.get(val.getDistDest()), destination));
+								distances.get(val.getDistDest()) + 1, destination));
 					}
 				}
 			}
@@ -282,14 +276,11 @@ public class SmallWorld {
 
 	/** Do nothing. */
 	public static class HistogramMap extends
-			Mapper<LongWritable, EValue, LongWritable, EValue> {
+			Mapper<LongWritable, LongWritable, LongWritable, LongWritable> {
 		@Override
-		public void map(LongWritable key, EValue value, Context context)
+		public void map(LongWritable key, LongWritable value, Context context)
 				throws IOException, InterruptedException {
-			if (value.getType() == ValueUse.DISTANCE
-					&& value.getDistDest() <= MAX_ITERATIONS) {
-				context.write(key, value);
-			}
+			context.write(key, value);
 		}
 	}
 
@@ -335,12 +326,6 @@ public class SmallWorld {
 
 		// Actually starts job, and waits for it to finish
 		job.waitForCompletion(true);
-
-		// Example of reading a counter
-		/*
-		 * System.out.println("Read in " +
-		 * job.getCounters().findCounter(ValueUse.EDGE).getValue() + " edges");
-		 */
 
 		// Repeats your BFS mapreduce
 		int i = 0;
