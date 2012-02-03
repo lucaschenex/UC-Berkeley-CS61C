@@ -93,20 +93,13 @@ public class SmallWorld {
 			value2 = in.readLong();
 		}
 
-		public void set(ValueUse use, long value) {
-			this.type = use;
-			this.value1 = value;
-		}
-
-		public String toString() {
-			return type.name() + ": " + value1;
-		}
-
-		public long getValue1() {
+		/** Returns distance or destination. */
+		public long getDistDest() {
 			return value1;
 		}
 
-		public long getValue2() {
+		/** Returns origin. */
+		public long getOrigin() {
 			return value2;
 		}
 
@@ -147,15 +140,13 @@ public class SmallWorld {
 			}
 		}
 
-		/* Will need to modify to not lose any edges. */
+		/* Select vertices as starting points with probability 1/denom. */
 		@Override
 		public void map(LongWritable key, LongWritable value, Context context)
 				throws IOException, InterruptedException {
-			// Send edge forward only if part of random subset
 			long sourceId = value.get();
 			context.write(key, new EValue(ValueUse.DESTINATION, sourceId));
 			if (Math.random() < 1.0 / denom) {
-				value = new LongWritable(-1);
 				context.write(key, new EValue(ValueUse.DISTANCE, 0, sourceId));
 			} else {
 				context.write(key, new EValue(ValueUse.DISTANCE,
@@ -215,7 +206,7 @@ public class SmallWorld {
 	public static class SearchReduce extends
 			Reducer<LongWritable, EValue, LongWritable, EValue> {
 
-		/** Identity reduce. */
+		/* Updates distances. */
 		@Override
 		public void reduce(LongWritable key, Iterable<EValue> values,
 				Context context) throws IOException, InterruptedException {
@@ -224,11 +215,11 @@ public class SmallWorld {
 			for (EValue val : values) {
 				if (val.getType() == ValueUse.DESTINATION) {
 					context.write(key, val); // propagate graph
-					destinations.add(val.getValue1());
+					destinations.add(val.getDistDest());
 				} else if (val.getType() == ValueUse.DISTANCE) {
 					// take minimum distance ea. time
-					long origin = val.getValue1();
-					long distance = val.getValue1();
+					long origin = val.getOrigin();
+					long distance = val.getDistDest();
 					if (distances.containsKey(origin)) {
 						if (distances.get(origin) > distance) {
 							distances.put(origin, distance);
@@ -243,7 +234,7 @@ public class SmallWorld {
 				if (val.getType() == ValueUse.DISTANCE) {
 					for (long destination : destinations) {
 						context.write(key, new EValue(ValueUse.DISTANCE,
-								distances.get(val.getValue1()), destination));
+								distances.get(val.getDistDest()), destination));
 					}
 				}
 			}
@@ -257,7 +248,7 @@ public class SmallWorld {
 		public void map(LongWritable key, EValue value, Context context)
 				throws IOException, InterruptedException {
 			if (value.getType() == ValueUse.DISTANCE
-					&& value.getValue1() <= MAX_ITERATIONS) {
+					&& value.getDistDest() <= MAX_ITERATIONS) {
 				context.write(key, value);
 			}
 		}
@@ -272,8 +263,8 @@ public class SmallWorld {
 			for (EValue val : values) {
 				if (val.getType() == ValueUse.DISTANCE) {
 					// take minimum distance ea. time
-					long origin = val.getValue1();
-					long distance = val.getValue1();
+					long origin = val.getOrigin();
+					long distance = val.getDistDest();
 					if (distances.containsKey(origin)) {
 						if (distances.get(origin) > distance) {
 							distances.put(origin, distance);
@@ -284,7 +275,7 @@ public class SmallWorld {
 				}
 			}
 			for (EValue val : values) {
-				context.write(new LongWritable(val.getValue2()), new LongWritable(val.getValue1()));
+				context.write(new LongWritable(val.getOrigin()), new LongWritable(val.getDistDest()));
 			}
 		}
 	}
@@ -296,7 +287,7 @@ public class SmallWorld {
 		public void map(LongWritable key, EValue value, Context context)
 				throws IOException, InterruptedException {
 			if (value.getType() == ValueUse.DISTANCE
-					&& value.getValue1() <= MAX_ITERATIONS) {
+					&& value.getDistDest() <= MAX_ITERATIONS) {
 				context.write(key, value);
 			}
 		}
