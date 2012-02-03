@@ -234,15 +234,12 @@ public class SmallWorld {
 			 * emit a pair (destination, DISTANCE distance+1 origin)
 			 * done only if current vertex has a distance value from that origin
 			 */
-			for (EValue val : values) {
-				if (val.getType() == ValueUse.DISTANCE) {
-					long origin = val.getOrigin();
-					long distance = distances.get(origin);
-					for (long destination : destinations) {
-						if (distance < MAX_DISTANCE) { //only update if current destination is reachable
-							context.write(new LongWritable(destination),
-									new EValue(ValueUse.DISTANCE, distance + 1, origin));
-						}
+			for (long origin : distances.keySet()) {
+				long distance = distances.get(origin);
+				for (long destination : destinations) {
+					if (distance < MAX_DISTANCE) { //only update if current destination is reachable
+						context.write(new LongWritable(destination),
+								new EValue(ValueUse.DISTANCE, distance + 1, origin));
 					}
 				}
 			}
