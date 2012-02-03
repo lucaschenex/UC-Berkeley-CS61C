@@ -39,7 +39,7 @@ import org.apache.hadoop.util.GenericOptionsParser;
 public class SmallWorld {
 
 	/** Maximum depth for any breadth-first search. */
-	public static final int MAX_ITERATIONS = 5;
+	public static final int MAX_ITERATIONS = 2;
 	/** An unreachable distance. */
 	public static final int MAX_DISTANCE = MAX_ITERATIONS + 1;
 
@@ -210,8 +210,8 @@ public class SmallWorld {
 			//distances maps from ea. origin to distance of this key from that origin
 			HashMap<Long, Long> distances = new HashMap<Long, Long>();
 			for (EValue val : values) {
+				context.write(key, val); // propagate graph (distance and destination info)
 				if (val.getType() == ValueUse.DESTINATION) {
-					context.write(key, val); // propagate graph
 					destinations.add(val.getDistDest());
 				} else if (val.getType() == ValueUse.DISTANCE) {
 					// take minimum distance ea. time
@@ -227,7 +227,7 @@ public class SmallWorld {
 				}
 			}
 			// update distance for successors, one more than current
-			// emit a pair (destination, destination distance EValue)
+			// emit a pair (destination, DISTANCE distance+1 origin)
 			for (EValue val : values) {
 				if (val.getType() == ValueUse.DISTANCE) {
 					long origin = val.getOrigin();
