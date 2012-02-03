@@ -39,7 +39,7 @@ import org.apache.hadoop.util.GenericOptionsParser;
 public class SmallWorld {
 
 	// Maximum dept for any breadth-first search
-	public static final int MAX_ITERATIONS = 20;
+	public static final int MAX_ITERATIONS = 5;
 
 	// Skeleton code uses this to share denom cmd-line arg across cluster
 	public static final String DENOM_PATH = "denom.txt";
@@ -389,11 +389,11 @@ public class SmallWorld {
 		// By declaring i above outside of loop conditions, can use it
 		// here to get last bfs output to be input to histogram
 		FileInputFormat.addInputPath(job, new Path("bfs-" + i + "-out"));
-		FileOutputFormat.setOutputPath(job, new Path(args[1]));
+		i++;
+		FileOutputFormat.setOutputPath(job, new Path("bfs-" + i + "-out"));
 
 		job.waitForCompletion(true);
 
-		i++;
 
 		// Mapreduce config for histogram computation
 		job = new Job(conf, "hist");
