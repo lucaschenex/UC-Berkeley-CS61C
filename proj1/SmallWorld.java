@@ -321,9 +321,9 @@ public class SmallWorld {
 		job.setJarByClass(SmallWorld.class);
 
 		job.setMapOutputKeyClass(LongWritable.class);
-		job.setMapOutputValueClass(LongWritable.class);
+		job.setMapOutputValueClass(EValue.class);
 		job.setOutputKeyClass(LongWritable.class);
-		job.setOutputValueClass(LongWritable.class);
+		job.setOutputValueClass(EValue.class);
 
 		job.setMapperClass(LoaderMap.class);
 		job.setReducerClass(LoadReduce.class);
@@ -352,9 +352,9 @@ public class SmallWorld {
 			job.setJarByClass(SmallWorld.class);
 
 			job.setMapOutputKeyClass(LongWritable.class);
-			job.setMapOutputValueClass(LongWritable.class);
+			job.setMapOutputValueClass(EValue.class);
 			job.setOutputKeyClass(LongWritable.class);
-			job.setOutputValueClass(LongWritable.class);
+			job.setOutputValueClass(EValue.class);
 
 			job.setMapperClass(SearchMap.class);
 			job.setReducerClass(SearchReduce.class);
@@ -402,7 +402,7 @@ public class SmallWorld {
 		job.setMapOutputKeyClass(LongWritable.class);
 		job.setMapOutputValueClass(LongWritable.class);
 		job.setOutputKeyClass(LongWritable.class);
-		job.setOutputValueClass(LongWritable.class);
+		job.setOutputValueClass(Text.class);
 
 		job.setMapperClass(HistogramMap.class);
 		job.setReducerClass(HistogramReduce.class);
