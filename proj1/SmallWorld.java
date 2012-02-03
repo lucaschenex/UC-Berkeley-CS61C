@@ -207,9 +207,10 @@ public class SmallWorld {
 			ArrayList<Long> destinations = new ArrayList<Long>();
 			//distances maps from ea. origin to distance of this key from that origin
 			HashMap<Long, Long> distances = new HashMap<Long, Long>();
+			// calculate min. distances
 			for (EValue val : values) {
-				context.write(key, val); // propagate graph (distance and destination info)
 				if (val.getType() == ValueUse.DESTINATION) {
+					context.write(key, val); //propogate destination
 					destinations.add(val.getDistDest());
 				} else if (val.getType() == ValueUse.DISTANCE) {
 					// take minimum distance ea. time
@@ -223,6 +224,11 @@ public class SmallWorld {
 						distances.put(origin, distance);
 					}
 				}
+			}
+			// write updated distances
+			for (Map.Entry<Long, Long> pairing : distances.entrySet()) {
+				context.write(key,
+						new EValue(ValueUse.DISTANCE, pairing.getValue(), pairing.getKey()));
 			}
 			/* update distance for successors, one more than current
 			 * emit a pair (destination, DISTANCE distance+1 origin)
@@ -243,37 +249,34 @@ public class SmallWorld {
 		}
 	}
 
-	/** Just keep distance information for reachable nodes. */
+	/** Just keep distance information. */
 	public static class CleanupMap extends
 			Mapper<LongWritable, EValue, LongWritable, EValue> {
 		@Override
 		public void map(LongWritable key, EValue value, Context context)
 				throws IOException, InterruptedException {
-			if (value.getType() == ValueUse.DISTANCE
-					&& value.getDistDest() < MAX_DISTANCE) {
+			if (value.getType() == ValueUse.DISTANCE) {
 				context.write(key, value);
 			}
 		}
 	}
 
-	/** Output origin and distance for this key. */
+	/** Output origin and distance for keys from that origin. */
 	public static class CleanupReduce extends
 			Reducer<LongWritable, EValue, LongWritable, LongWritable> {
 		public void reduce(LongWritable key, Iterable<EValue> values,
 				Context context) throws IOException, InterruptedException {
 			HashMap<Long, Long> distances = new HashMap<Long, Long>();
 			for (EValue val : values) {
-				if (val.getType() == ValueUse.DISTANCE) {
-					// take minimum distance ea. time
-					long origin = val.getOrigin();
-					long distance = val.getDistDest();
-					if (distances.containsKey(origin)) {
-						if (distances.get(origin) > distance) {
-							distances.put(origin, distance);
-						}
-					} else {
+				// take minimum distance ea. time
+				long origin = val.getOrigin();
+				long distance = val.getDistDest();
+				if (distances.containsKey(origin)) {
+					if (distances.get(origin) > distance) {
 						distances.put(origin, distance);
 					}
+				} else {
+					distances.put(origin, distance);
 				}
 			}
 			for (EValue val : values) {
@@ -296,6 +299,7 @@ public class SmallWorld {
 	/** Make the histogram. Probably have to change output to a list of longs? */
 	public static class HistogramReduce extends
 	Reducer<LongWritable, LongWritable, LongWritable, Text> {
+		@Override
 		public void reduce(LongWritable key, Iterable<LongWritable> values,
 				Context context) throws IOException, InterruptedException {
 			long[] counts = new long[MAX_ITERATIONS];
@@ -303,6 +307,7 @@ public class SmallWorld {
 				counts[(int) val.get()] += 1; //do the counting
 			}
 			context.write(key, new Text(Arrays.toString(counts)));
+			context.write(key, new Text("Debugging, remove later"));
 		}
 	}
 
@@ -378,14 +383,12 @@ public class SmallWorld {
 		job.setInputFormatClass(SequenceFileInputFormat.class);
 		job.setOutputFormatClass(SequenceFileOutputFormat.class);
 
-		// By declaring i above outside of loop conditions, can use it
-		// here to get last bfs output to be input to histogram
 		FileInputFormat.addInputPath(job, new Path("bfs-" + i + "-out"));
-		i++;
-		FileOutputFormat.setOutputPath(job, new Path("bfs-" + i + "-out"));
+		FileOutputFormat.setOutputPath(job, new Path("bfs-" + (i + 1) + "-out"));
 
 		job.waitForCompletion(true);
-
+		i++;
+		
 
 		// Mapreduce config for histogram computation
 		job = new Job(conf, "hist");
