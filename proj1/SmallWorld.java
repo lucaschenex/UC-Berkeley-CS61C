@@ -141,11 +141,10 @@ public class SmallWorld {
 		@Override
 		public void map(LongWritable key, LongWritable value, Context context)
 				throws IOException, InterruptedException {
-			long sourceId = value.get();
 			context.write(key, new EValue(ValueUse.DESTINATION, value.get())); //propagate graph
 			if (Math.random() < 1.0 / denom) {
 				// 0 distance will help the next mapreduce know where to start.
-				context.write(key, new EValue(ValueUse.DISTANCE, 0, sourceId));
+				context.write(key, new EValue(ValueUse.DISTANCE, 0, key.get()));
 			}
 		}
 	}
@@ -201,17 +200,30 @@ public class SmallWorld {
 	public static class SearchReduce extends
 			Reducer<LongWritable, EValue, LongWritable, EValue> {
 
-		/* Updates distances. Probably VERY INEFFICIENT right now. */
+		/* Updates distances. Probably VERY INEFFICIENT right now.
+		 * I'm adding one to the appropriate distance of each successor.
+		 * For example:
+		 * 
+		 * A -> B -> C -> D
+		 * 
+		 * B is distance 1 from A. So we know that C must be 1 more away from A than B.
+		 * 
+		 * The problem is that this gets called each time. I haven't implemented a check
+		 * that says the distance of C from A has been found -- that we can stop.
+		 * I can't think of a better way. This means right now though that after ea. iteration,
+		 * a pair of points say (E, F) might have several distances say 4, 8, 10, 12. The purpose
+		 * of the HashMap is to store the minimum distance each time. */
 		@Override
 		public void reduce(LongWritable key, Iterable<EValue> values,
 				Context context) throws IOException, InterruptedException {
+			// keeps track of all successors for this vertex (key)
 			ArrayList<Long> destinations = new ArrayList<Long>();
-			//distances maps from ea. origin to distance of this key from that origin
+			//distances maps from ea. origin to distance(key, origin)
 			HashMap<Long, Long> distances = new HashMap<Long, Long>();
 			// calculate min. distances
 			for (EValue val : values) {
 				if (val.getType() == ValueUse.DESTINATION) {
-					context.write(key, val); //propogate destination
+					context.write(key, val); //propagate destination
 					destinations.add(val.getDistDest());
 				} else if (val.getType() == ValueUse.DISTANCE) {
 					// take minimum distance ea. time
@@ -238,10 +250,8 @@ public class SmallWorld {
 			for (long origin : distances.keySet()) {
 				long distance = distances.get(origin);
 				for (long destination : destinations) {
-					if (distance < MAX_DISTANCE) { //only update if current destination is reachable
-						context.write(new LongWritable(destination),
-								new EValue(ValueUse.DISTANCE, distance + 1, origin));
-					}
+					context.write(new LongWritable(destination),
+							new EValue(ValueUse.DISTANCE, distance + 1, origin));
 				}
 			}
 		}
@@ -265,6 +275,7 @@ public class SmallWorld {
 
 		public static LongWritable ONE = new LongWritable(1L);
 
+		@Override
 		public void reduce(LongWritable key, Iterable<EValue> values,
 				Context context) throws IOException, InterruptedException {
 			//distances maps from ea. origin to distance of this key from that origin
