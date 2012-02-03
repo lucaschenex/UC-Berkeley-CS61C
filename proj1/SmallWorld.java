@@ -47,7 +47,7 @@ public class SmallWorld {
 	// Example enumerated type, used by EValue and Counter example
 	// The number of starting vertices
 	public static enum ValueUse {
-		DESTINATION, DISTANCE
+		DESTINATION, DISTANCE, BLANK
 	};
 
 	// Example writable type
@@ -60,6 +60,13 @@ public class SmallWorld {
 		/** The second value. If type == DISTANCE, this is origin id. */
 		public long value2;
 
+		
+		public EValue() {
+			this.type = ValueUse.BLANK;
+			this.value1 = -1;
+			this.value2 = -1;
+		}
+		
 		public EValue(ValueUse type, long value) {
 			this.type = type;
 			this.value1 = value;
