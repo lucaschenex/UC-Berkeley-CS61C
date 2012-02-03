@@ -143,10 +143,8 @@ public class SmallWorld {
 			long sourceId = value.get();
 			context.write(key, new EValue(ValueUse.DESTINATION, value.get())); //propagate graph
 			if (Math.random() < 1.0 / denom) {
+				// 0 distance will help the next mapreduce know where to start.
 				context.write(key, new EValue(ValueUse.DISTANCE, 0, sourceId));
-			} else {
-				context.write(key, new EValue(ValueUse.DISTANCE,
-						MAX_DISTANCE));
 			}
 		}
 	}
@@ -226,8 +224,10 @@ public class SmallWorld {
 					}
 				}
 			}
-			// update distance for successors, one more than current
-			// emit a pair (destination, DISTANCE distance+1 origin)
+			/* update distance for successors, one more than current
+			 * emit a pair (destination, DISTANCE distance+1 origin)
+			 * done only if current vertex has a distance value from that origin
+			 */
 			for (EValue val : values) {
 				if (val.getType() == ValueUse.DISTANCE) {
 					long origin = val.getOrigin();
