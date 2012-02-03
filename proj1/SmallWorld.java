@@ -40,6 +40,8 @@ public class SmallWorld {
 
 	/** Maximum depth for any breadth-first search. */
 	public static final int MAX_ITERATIONS = 5;
+	/** An unreachable distance. */
+	public static final int MAX_DISTANCE = MAX_ITERATIONS + 1;
 
 	// Skeleton code uses this to share denom cmd-line arg across cluster
 	public static final String DENOM_PATH = "denom.txt";
@@ -144,7 +146,7 @@ public class SmallWorld {
 				context.write(key, new EValue(ValueUse.DISTANCE, 0, sourceId));
 			} else {
 				context.write(key, new EValue(ValueUse.DISTANCE,
-						MAX_ITERATIONS + 1));
+						MAX_DISTANCE));
 			}
 		}
 	}
@@ -205,6 +207,7 @@ public class SmallWorld {
 		public void reduce(LongWritable key, Iterable<EValue> values,
 				Context context) throws IOException, InterruptedException {
 			ArrayList<Long> destinations = new ArrayList<Long>();
+			//distances maps from ea. origin to distance of this key from that origin
 			HashMap<Long, Long> distances = new HashMap<Long, Long>();
 			for (EValue val : values) {
 				if (val.getType() == ValueUse.DESTINATION) {
@@ -224,11 +227,16 @@ public class SmallWorld {
 				}
 			}
 			// update distance for successors, one more than current
+			// emit a pair (destination, destination distance EValue)
 			for (EValue val : values) {
 				if (val.getType() == ValueUse.DISTANCE) {
+					long origin = val.getOrigin();
 					for (long destination : destinations) {
-						context.write(key, new EValue(ValueUse.DISTANCE,
-								distances.get(val.getDistDest()) + 1, destination));
+						long distance = distances.get(origin);
+						if (distance < MAX_DISTANCE) { //only update if current destination is reachable
+							context.write(new LongWritable(destination),
+									new EValue(ValueUse.DISTANCE, distance + 1, origin));
+						}
 					}
 				}
 			}
@@ -242,13 +250,13 @@ public class SmallWorld {
 		public void map(LongWritable key, EValue value, Context context)
 				throws IOException, InterruptedException {
 			if (value.getType() == ValueUse.DISTANCE
-					&& value.getDistDest() <= MAX_ITERATIONS) {
+					&& value.getDistDest() < MAX_DISTANCE) {
 				context.write(key, value);
 			}
 		}
 	}
 
-	/** Output origin and distance. */
+	/** Output origin and distance for this key. */
 	public static class CleanupReduce extends
 			Reducer<LongWritable, EValue, LongWritable, LongWritable> {
 		public void reduce(LongWritable key, Iterable<EValue> values,
@@ -269,7 +277,8 @@ public class SmallWorld {
 				}
 			}
 			for (EValue val : values) {
-				context.write(new LongWritable(val.getOrigin()), new LongWritable(val.getDistDest()));
+				long origin = val.getOrigin();
+				context.write(new LongWritable(origin), new LongWritable(distances.get(origin)));
 			}
 		}
 	}
