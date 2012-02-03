@@ -326,7 +326,7 @@ public class SmallWorld {
 		job.setOutputValueClass(LongWritable.class);
 
 		job.setMapperClass(LoaderMap.class);
-		job.setReducerClass(Reducer.class);
+		job.setReducerClass(LoadReduce.class);
 
 		job.setInputFormatClass(SequenceFileInputFormat.class);
 		job.setOutputFormatClass(SequenceFileOutputFormat.class);
