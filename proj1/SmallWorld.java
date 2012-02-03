@@ -266,6 +266,7 @@ public class SmallWorld {
 			Reducer<LongWritable, EValue, LongWritable, LongWritable> {
 		public void reduce(LongWritable key, Iterable<EValue> values,
 				Context context) throws IOException, InterruptedException {
+			//distances maps from ea. origin to distance of this key from that origin
 			HashMap<Long, Long> distances = new HashMap<Long, Long>();
 			for (EValue val : values) {
 				// take minimum distance ea. time
@@ -279,9 +280,8 @@ public class SmallWorld {
 					distances.put(origin, distance);
 				}
 			}
-			for (EValue val : values) {
-				long origin = val.getOrigin();
-				context.write(new LongWritable(origin), new LongWritable(distances.get(origin)));
+			for (Map.Entry<Long, Long> pair : distances.entrySet()) {
+				context.write(new LongWritable(pair.getKey()), new LongWritable(pair.getValue()));
 			}
 		}
 	}
@@ -307,7 +307,6 @@ public class SmallWorld {
 				counts[(int) val.get()] += 1; //do the counting
 			}
 			context.write(key, new Text(Arrays.toString(counts)));
-			context.write(key, new Text("Debugging, remove later"));
 		}
 	}
 
