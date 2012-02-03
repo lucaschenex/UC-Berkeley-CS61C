@@ -39,7 +39,7 @@ import org.apache.hadoop.util.GenericOptionsParser;
 public class SmallWorld {
 
 	/** Maximum depth for any breadth-first search. */
-	public static final int MAX_ITERATIONS = 2;
+	public static final int MAX_ITERATIONS = 10; //SHOULD BE 20
 	/** An unreachable distance. */
 	public static final int MAX_DISTANCE = MAX_ITERATIONS + 1;
 
@@ -57,9 +57,9 @@ public class SmallWorld {
 		/** What this value represents. */
 		public ValueUse type;
 		/** The first value. Either destination or distance.*/
-		public long value1;
+		public long destDist;
 		/** The second value. If type == DISTANCE, this is origin id. */
-		public long value2;
+		public long origin;
 
 		/** Hadoop requires a default constructor. */
 		public EValue() {
@@ -74,34 +74,35 @@ public class SmallWorld {
 		/** For distance type. */
 		public EValue(ValueUse type, long value1, long value2) {
 			this.type = type;
-			this.value1 = value1;
-			this.value2 = value2;
+			this.destDist = value1;
+			this.origin = value2;
 		}
 
 		// Serializes object - needed for Writable
 		public void write(DataOutput out) throws IOException {
 			out.writeUTF(type.name());
-			out.writeLong(value1);
-			out.writeLong(value2);
+			out.writeLong(destDist);
+			out.writeLong(origin);
 		}
 
 		// Deserializes object - needed for Writable
 		public void readFields(DataInput in) throws IOException {
 			type = ValueUse.valueOf(in.readUTF());
-			value1 = in.readLong();
-			value2 = in.readLong();
+			destDist = in.readLong();
+			origin = in.readLong();
 		}
 
 		/** Returns distance or destination. */
 		public long getDistDest() {
-			return value1;
+			return destDist;
 		}
 
 		/** Returns origin. */
 		public long getOrigin() {
-			return value2;
+			return origin;
 		}
 
+		/** Returns type. */
 		public ValueUse getType() {
 			return type;
 		}
@@ -196,11 +197,11 @@ public class SmallWorld {
 		}
 	}
 
-	/** Propagation. */
+	/** Propagation of breadth-first search. */
 	public static class SearchReduce extends
 			Reducer<LongWritable, EValue, LongWritable, EValue> {
 
-		/* Updates distances. */
+		/* Updates distances. Probably VERY INEFFICIENT right now. */
 		@Override
 		public void reduce(LongWritable key, Iterable<EValue> values,
 				Context context) throws IOException, InterruptedException {
