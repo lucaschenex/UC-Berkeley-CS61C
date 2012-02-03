@@ -258,9 +258,12 @@ public class SmallWorld {
 		}
 	}
 
-	/** Output origin and distance for keys from that origin. */
+	/** Output (distance, 1) for each origin of each key. */
 	public static class CleanupReduce extends
 			Reducer<LongWritable, EValue, LongWritable, LongWritable> {
+
+		public static LongWritable ONE = new LongWritable(1L);
+
 		public void reduce(LongWritable key, Iterable<EValue> values,
 				Context context) throws IOException, InterruptedException {
 			//distances maps from ea. origin to distance of this key from that origin
@@ -277,8 +280,8 @@ public class SmallWorld {
 					distances.put(origin, distance);
 				}
 			}
-			for (Map.Entry<Long, Long> pair : distances.entrySet()) {
-				context.write(new LongWritable(pair.getKey()), new LongWritable(pair.getValue()));
+			for (Long distance : distances.values()) {
+				context.write(new LongWritable(distance), ONE);
 			}
 		}
 	}
@@ -299,11 +302,11 @@ public class SmallWorld {
 		@Override
 		public void reduce(LongWritable key, Iterable<LongWritable> values,
 				Context context) throws IOException, InterruptedException {
-			long[] counts = new long[MAX_ITERATIONS + 1];
+			long sum = 0L;
 			for (LongWritable val : values) {
-				counts[(int) val.get()] += 1; //do the counting
+				sum += 1; //do the counting
 			}
-			context.write(key, new Text(Arrays.toString(counts)));
+			context.write(key, new Text(Long.toString(sum)));
 		}
 	}
 
