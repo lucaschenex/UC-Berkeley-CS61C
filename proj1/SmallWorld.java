@@ -1,5 +1,6 @@
 /*
   CS 61C Project1: Small World
+  2/4: 11:15
 
   Name: Hairan Zhu
   Login: cs61c-eu
@@ -7,6 +8,7 @@
   Name: Benjamin Han
   Login: cs61c-mm
  */
+
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
