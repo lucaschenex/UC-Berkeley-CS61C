@@ -1,6 +1,5 @@
 /*
   CS 61C Project1: Small World
-  2/4: 11:15
 
   Name: Hairan Zhu
   Login: cs61c-eu
@@ -40,7 +39,7 @@ import org.apache.hadoop.util.GenericOptionsParser;
 public class SmallWorld {
 
 	/** Maximum depth for any breadth-first search. */
-	public static final int MAX_ITERATIONS = 10; // SHOULD BE 20
+	public static final int MAX_ITERATIONS = 4;
 	/** An unreachable distance. */
 	public static final int MAX_DISTANCE = MAX_ITERATIONS + 1;
 
@@ -152,8 +151,7 @@ public class SmallWorld {
 		@Override
 		public void map(LongWritable key, LongWritable value, Context context)
 				throws IOException, InterruptedException {
-			context.write(key, new EValue(ValueUse.DESTINATION, value.get())); // propagate
-																				// graph
+			context.write(key, new EValue(ValueUse.DESTINATION, value.get())); // propagate graph
 			if (Math.random() < 1.0 / denom) {
 				// 0 distance will help the next mapreduce know where to start.
 				context.getCounter(GraphCounter.ORIGINS).increment(1);
@@ -236,10 +234,9 @@ public class SmallWorld {
 			ArrayList<Long> destinations = new ArrayList<Long>();
 			// distances maps from ea. origin to distance(key, origin)
 			HashMap<Long, Long> distances = new HashMap<Long, Long>();
-			// calculate min. distances
+			// calculate min. distances and remember destinations
 			for (EValue val : values) {
 				if (val.getType() == ValueUse.DESTINATION) {
-					// context.write(key, val); //propagate destination
 					destinations.add(val.getDistDest());
 				} else if (val.getType() == ValueUse.DISTANCE) {
 					// take minimum distance ea. time
@@ -254,7 +251,7 @@ public class SmallWorld {
 					}
 				}
 			}
-			// write updated distances
+			// emit updated distances
 			for (Map.Entry<Long, Long> pairing : distances.entrySet()) {
 				context.write(key,
 						new EValue(ValueUse.DISTANCE, pairing.getValue(),
@@ -272,6 +269,7 @@ public class SmallWorld {
 							ValueUse.DISTANCE, distance + 1, origin));
 				}
 			}
+			// emit destinations if all distances are not found
 			if (distances.size() < _origins) {
 				context.getCounter(GraphCounter.DESTINATIONS_PROPAGATED).increment(distances.size());
 				for (long dest : destinations) {
@@ -380,6 +378,7 @@ public class SmallWorld {
 		// Loads number of origins
 		_origins = job.getCounters().findCounter(GraphCounter.ORIGINS)
 				.getValue();
+		System.out.printf("%d origins selected\n", _origins);
 
 		// Repeats your BFS mapreduce
 		int i = 0;
