@@ -49,7 +49,7 @@ public class SmallWorld {
 	public static final String DENOM_PATH = "denom.txt";
 
     /** The number of starting points. */
-    public static int _origins = 0;
+    public static long _origins = 0;
 
     /** The number of starting points. */
     public static enum GraphCounter {
@@ -153,7 +153,7 @@ public class SmallWorld {
 			context.write(key, new EValue(ValueUse.DESTINATION, value.get())); //propagate graph
 			if (Math.random() < 1.0 / denom) {
 				// 0 distance will help the next mapreduce know where to start.
-			        context.getCounter(ValueUse.origins).increment(1);
+			        context.getCounter(GraphCounter.ORIGINS).increment(1);
 				context.write(key, new EValue(ValueUse.DISTANCE, 0, key.get()));
 			}
 		}
@@ -266,7 +266,7 @@ public class SmallWorld {
 			}
 			if (distances.size() < _origins) {
 			    for (long dest : destinations) {
-				context.write(key, new Evalue(ValueUse.DESTINATION, dest));
+				context.write(key, new EValue(ValueUse.DESTINATION, dest));
 			    }
 			}	
 		}
