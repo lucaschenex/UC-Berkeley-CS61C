@@ -48,9 +48,16 @@ public class SmallWorld {
 	// Skeleton code uses this to share denom cmd-line arg across cluster
 	public static final String DENOM_PATH = "denom.txt";
 
+    /** The number of starting points. */
+    public static int _origins = 0;
+
+    /** The number of starting points. */
+    public static enum GraphCounter {
+	ORIGINS};
+
 	/** What type of value. */
 	public static enum ValueUse {
-		DESTINATION, DISTANCE, BLANK
+    	        DESTINATION, DISTANCE, BLANK
 	};
 
 	/** Stores information for each vertex in the graph. */
@@ -146,6 +153,7 @@ public class SmallWorld {
 			context.write(key, new EValue(ValueUse.DESTINATION, value.get())); //propagate graph
 			if (Math.random() < 1.0 / denom) {
 				// 0 distance will help the next mapreduce know where to start.
+			        context.getCounter(ValueUse.origins).increment(1);
 				context.write(key, new EValue(ValueUse.DISTANCE, 0, key.get()));
 			}
 		}
@@ -225,7 +233,7 @@ public class SmallWorld {
 			// calculate min. distances
 			for (EValue val : values) {
 				if (val.getType() == ValueUse.DESTINATION) {
-					context.write(key, val); //propagate destination
+				    //context.write(key, val); //propagate destination
 					destinations.add(val.getDistDest());
 				} else if (val.getType() == ValueUse.DISTANCE) {
 					// take minimum distance ea. time
@@ -256,6 +264,11 @@ public class SmallWorld {
 							new EValue(ValueUse.DISTANCE, distance + 1, origin));
 				}
 			}
+			if (distances.size() < _origins) {
+			    for (long dest : destinations) {
+				context.write(key, new Evalue(ValueUse.DESTINATION, dest));
+			    }
+			}	
 		}
 	}
 
@@ -353,6 +366,9 @@ public class SmallWorld {
 
 		// Actually starts job, and waits for it to finish
 		job.waitForCompletion(true);
+
+		// Loads number of origins
+		_origins = job.getCounters().findCounter(GraphCounter.ORIGINS).getValue();
 
 		// Repeats your BFS mapreduce
 		int i = 0;
