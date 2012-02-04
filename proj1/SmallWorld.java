@@ -257,33 +257,55 @@ public class SmallWorld {
 		}
 	}
 
-	/** Remove extra information and emit only minimum distance to each origin, if reachable. */
-	public static class HistogramMap extends
-			Mapper<LongWritable, EValue, LongWritable, LongWritable> {
-
-	        public static LongWritable ONE = new LongWritable(1L);
-	    
-		public void map(LongWritable key, Iterable<EValue> values, Context context)
+	/** Just keep distance information. */
+	public static class CleanupMap extends
+			Mapper<LongWritable, EValue, LongWritable, EValue> {
+		@Override
+		public void map(LongWritable key, EValue value, Context context)
 				throws IOException, InterruptedException {
-		    HashMap<Long, Long> distances = new HashMap<Long, Long>();
-		    for (EValue val : values) {
-			if (val.getType() == ValueUse.DISTANCE) {
-			    // take minimum distance ea. time
-			    long origin = val.getOrigin();
-			    long distance = val.getDistDest();
-			    if (distances.containsKey(origin)) {
-				if (distances.get(origin) > distance) {
-				    distances.put(origin, distance);
-				}
-			    } else {
-				distances.put(origin, distance);
-			    }
-			}	
-		    }	
-			for (Long distance : distances.values()) {
-			    context.write(new LongWritable(distance), ONE);
+			if (value.getType() == ValueUse.DISTANCE) {
+				context.write(key, value);
 			}
-		}	
+		}
+	}
+
+	/** Output (distance, 1) for each origin of each key. */
+	public static class CleanupReduce extends
+			Reducer<LongWritable, EValue, LongWritable, LongWritable> {
+
+		public static LongWritable ONE = new LongWritable(1L);
+
+		@Override
+		public void reduce(LongWritable key, Iterable<EValue> values,
+				Context context) throws IOException, InterruptedException {
+			//distances maps from ea. origin to distance of this key from that origin
+			HashMap<Long, Long> distances = new HashMap<Long, Long>();
+			for (EValue val : values) {
+				// take minimum distance ea. time
+				long origin = val.getOrigin();
+				long distance = val.getDistDest();
+				if (distances.containsKey(origin)) {
+					if (distances.get(origin) > distance) {
+						distances.put(origin, distance);
+					}
+				} else {
+					distances.put(origin, distance);
+				}
+			}
+			for (Long distance : distances.values()) {
+				context.write(new LongWritable(distance), ONE);
+			}
+		}
+	}
+
+	/** Do nothing. */
+	public static class HistogramMap extends
+			Mapper<LongWritable, LongWritable, LongWritable, LongWritable> {
+		@Override
+		public void map(LongWritable key, LongWritable value, Context context)
+				throws IOException, InterruptedException {
+			context.write(key, value);
+		}
 	}
 
 	/** Make the histogram. Probably have to change output to a list of longs? */
@@ -357,14 +379,36 @@ public class SmallWorld {
 			i++;
 		}
 
-		// Mapreduce config for histogram computation
-		job = new Job(conf, "hist");
+		// Cleanup
+		job = new Job(conf, "cleanup");
 		job.setJarByClass(SmallWorld.class);
 
 		job.setMapOutputKeyClass(LongWritable.class);
 		job.setMapOutputValueClass(EValue.class);
 		job.setOutputKeyClass(LongWritable.class);
 		job.setOutputValueClass(LongWritable.class);
+
+		job.setMapperClass(CleanupMap.class);
+		job.setReducerClass(CleanupReduce.class);
+
+		job.setInputFormatClass(SequenceFileInputFormat.class);
+		job.setOutputFormatClass(SequenceFileOutputFormat.class);
+
+		FileInputFormat.addInputPath(job, new Path("bfs-" + i + "-out"));
+		FileOutputFormat.setOutputPath(job, new Path("bfs-" + (i + 1) + "-out"));
+
+		job.waitForCompletion(true);
+		i++;
+		
+
+		// Mapreduce config for histogram computation
+		job = new Job(conf, "hist");
+		job.setJarByClass(SmallWorld.class);
+
+		job.setMapOutputKeyClass(LongWritable.class);
+		job.setMapOutputValueClass(LongWritable.class);
+		job.setOutputKeyClass(LongWritable.class);
+		job.setOutputValueClass(Text.class);
 
 		job.setMapperClass(HistogramMap.class);
 		job.setReducerClass(HistogramReduce.class);
