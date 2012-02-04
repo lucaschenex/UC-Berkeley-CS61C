@@ -158,7 +158,7 @@ public class SmallWorld {
 			}
 		}
 	}
-
+ 
 	/** Does nothing. */
 	public static class LoadReduce extends
 			Reducer<LongWritable, EValue, LongWritable, EValue> {
