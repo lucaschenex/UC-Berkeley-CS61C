@@ -9,7 +9,6 @@
   Login: cs61c-mm
  */
 
-
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.DataInput;
@@ -41,23 +40,24 @@ import org.apache.hadoop.util.GenericOptionsParser;
 public class SmallWorld {
 
 	/** Maximum depth for any breadth-first search. */
-	public static final int MAX_ITERATIONS = 10; //SHOULD BE 20
+	public static final int MAX_ITERATIONS = 10; // SHOULD BE 20
 	/** An unreachable distance. */
 	public static final int MAX_DISTANCE = MAX_ITERATIONS + 1;
 
 	// Skeleton code uses this to share denom cmd-line arg across cluster
 	public static final String DENOM_PATH = "denom.txt";
 
-    /** The number of starting points. */
-    public static long _origins = 0;
+	/** The number of starting points. */
+	public static long _origins = 0;
 
-    /** The number of starting points. */
-    public static enum GraphCounter {
-	ORIGINS};
+	/** The number of starting points. */
+	public static enum GraphCounter {
+		ORIGINS, DESTINATIONS_PROPAGATED
+	};
 
 	/** What type of value. */
 	public static enum ValueUse {
-    	        DESTINATION, DISTANCE, BLANK
+		DESTINATION, DISTANCE, BLANK
 	};
 
 	/** Stores information for each vertex in the graph. */
@@ -65,7 +65,7 @@ public class SmallWorld {
 
 		/** What this value represents. */
 		public ValueUse type;
-		/** The first value. Either destination or distance.*/
+		/** The first value. Either destination or distance. */
 		public long destDist;
 		/** The second value. If type == DISTANCE, this is origin id. */
 		public long origin;
@@ -145,20 +145,23 @@ public class SmallWorld {
 			}
 		}
 
-		/* Select vertices as starting points with probability 1/denom.
-		 * Those get marked with distance 0. */
+		/*
+		 * Select vertices as starting points with probability 1/denom. Those
+		 * get marked with distance 0.
+		 */
 		@Override
 		public void map(LongWritable key, LongWritable value, Context context)
 				throws IOException, InterruptedException {
-			context.write(key, new EValue(ValueUse.DESTINATION, value.get())); //propagate graph
+			context.write(key, new EValue(ValueUse.DESTINATION, value.get())); // propagate
+																				// graph
 			if (Math.random() < 1.0 / denom) {
 				// 0 distance will help the next mapreduce know where to start.
-			        context.getCounter(GraphCounter.ORIGINS).increment(1);
+				context.getCounter(GraphCounter.ORIGINS).increment(1);
 				context.write(key, new EValue(ValueUse.DISTANCE, 0, key.get()));
 			}
 		}
 	}
- 
+
 	/** Does nothing. */
 	public static class LoadReduce extends
 			Reducer<LongWritable, EValue, LongWritable, EValue> {
@@ -210,30 +213,33 @@ public class SmallWorld {
 	public static class SearchReduce extends
 			Reducer<LongWritable, EValue, LongWritable, EValue> {
 
-		/* Updates distances. Probably VERY INEFFICIENT right now.
-		 * I'm adding one to the appropriate distance of each successor.
-		 * For example:
+		/*
+		 * Updates distances. Probably VERY INEFFICIENT right now. I'm adding
+		 * one to the appropriate distance of each successor. For example:
 		 * 
 		 * A -> B -> C -> D
 		 * 
-		 * B is distance 1 from A. So we know that C must be 1 more away from A than B.
+		 * B is distance 1 from A. So we know that C must be 1 more away from A
+		 * than B.
 		 * 
-		 * The problem is that this gets called each time. I haven't implemented a check
-		 * that says the distance of C from A has been found -- that we can stop.
-		 * I can't think of a better way. This means right now though that after ea. iteration,
-		 * a pair of points say (E, F) might have several distances say 4, 8, 10, 12. The purpose
-		 * of the HashMap is to store the minimum distance each time. */
+		 * The problem is that this gets called each time. I haven't implemented
+		 * a check that says the distance of C from A has been found -- that we
+		 * can stop. I can't think of a better way. This means right now though
+		 * that after ea. iteration, a pair of points say (E, F) might have
+		 * several distances say 4, 8, 10, 12. The purpose of the HashMap is to
+		 * store the minimum distance each time.
+		 */
 		@Override
 		public void reduce(LongWritable key, Iterable<EValue> values,
 				Context context) throws IOException, InterruptedException {
 			// keeps track of all successors for this vertex (key)
 			ArrayList<Long> destinations = new ArrayList<Long>();
-			//distances maps from ea. origin to distance(key, origin)
+			// distances maps from ea. origin to distance(key, origin)
 			HashMap<Long, Long> distances = new HashMap<Long, Long>();
 			// calculate min. distances
 			for (EValue val : values) {
 				if (val.getType() == ValueUse.DESTINATION) {
-				    //context.write(key, val); //propagate destination
+					// context.write(key, val); //propagate destination
 					destinations.add(val.getDistDest());
 				} else if (val.getType() == ValueUse.DISTANCE) {
 					// take minimum distance ea. time
@@ -251,24 +257,28 @@ public class SmallWorld {
 			// write updated distances
 			for (Map.Entry<Long, Long> pairing : distances.entrySet()) {
 				context.write(key,
-						new EValue(ValueUse.DISTANCE, pairing.getValue(), pairing.getKey()));
+						new EValue(ValueUse.DISTANCE, pairing.getValue(),
+								pairing.getKey()));
 			}
-			/* update distance for successors, one more than current
-			 * emit a pair (destination, DISTANCE distance+1 origin)
-			 * done only if current vertex has a distance value from that origin
+			/*
+			 * update distance for successors, one more than current emit a pair
+			 * (destination, DISTANCE distance+1 origin) done only if current
+			 * vertex has a distance value from that origin
 			 */
 			for (long origin : distances.keySet()) {
 				long distance = distances.get(origin);
 				for (long destination : destinations) {
-					context.write(new LongWritable(destination),
-							new EValue(ValueUse.DISTANCE, distance + 1, origin));
+					context.write(new LongWritable(destination), new EValue(
+							ValueUse.DISTANCE, distance + 1, origin));
 				}
 			}
 			if (distances.size() < _origins) {
-			    for (long dest : destinations) {
-				context.write(key, new EValue(ValueUse.DESTINATION, dest));
-			    }
-			}	
+				for (long dest : destinations) {
+					context.getCounter(GraphCounter.DESTINATIONS_PROPAGATED)
+							.increment(1);
+					context.write(key, new EValue(ValueUse.DESTINATION, dest));
+				}
+			}
 		}
 	}
 
@@ -293,7 +303,8 @@ public class SmallWorld {
 		@Override
 		public void reduce(LongWritable key, Iterable<EValue> values,
 				Context context) throws IOException, InterruptedException {
-			//distances maps from ea. origin to distance of this key from that origin
+			// distances maps from ea. origin to distance of this key from that
+			// origin
 			HashMap<Long, Long> distances = new HashMap<Long, Long>();
 			for (EValue val : values) {
 				// take minimum distance ea. time
@@ -325,13 +336,13 @@ public class SmallWorld {
 
 	/** Make the histogram. Probably have to change output to a list of longs? */
 	public static class HistogramReduce extends
-	Reducer<LongWritable, LongWritable, LongWritable, Text> {
+			Reducer<LongWritable, LongWritable, LongWritable, Text> {
 		@Override
 		public void reduce(LongWritable key, Iterable<LongWritable> values,
 				Context context) throws IOException, InterruptedException {
 			long sum = 0L;
 			for (LongWritable val : values) {
-				sum += 1; //do the counting
+				sum += 1; // do the counting
 			}
 			context.write(key, new Text(Long.toString(sum)));
 		}
@@ -368,10 +379,12 @@ public class SmallWorld {
 		job.waitForCompletion(true);
 
 		// Loads number of origins
-		_origins = job.getCounters().findCounter(GraphCounter.ORIGINS).getValue();
+		_origins = job.getCounters().findCounter(GraphCounter.ORIGINS)
+				.getValue();
 
 		// Repeats your BFS mapreduce
 		int i = 0;
+		long prevDestinations = -1;
 		// Will need to change terminating conditions to respond to data
 		while (i < MAX_ITERATIONS) {
 			job = new Job(conf, "bfs" + i);
@@ -395,6 +408,14 @@ public class SmallWorld {
 
 			job.waitForCompletion(true);
 			i++;
+			long destinationsPropagated = job.getCounters()
+					.findCounter(GraphCounter.DESTINATIONS_PROPAGATED)
+					.getValue();
+			if (prevDestinations == destinationsPropagated) {
+				break;
+			} else {
+				prevDestinations = destinationsPropagated;
+			}
 		}
 
 		// Cleanup
@@ -413,11 +434,11 @@ public class SmallWorld {
 		job.setOutputFormatClass(SequenceFileOutputFormat.class);
 
 		FileInputFormat.addInputPath(job, new Path("bfs-" + i + "-out"));
-		FileOutputFormat.setOutputPath(job, new Path("bfs-" + (i + 1) + "-out"));
+		FileOutputFormat
+				.setOutputPath(job, new Path("bfs-" + (i + 1) + "-out"));
 
 		job.waitForCompletion(true);
 		i++;
-		
 
 		// Mapreduce config for histogram computation
 		job = new Job(conf, "hist");
