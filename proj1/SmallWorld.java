@@ -205,6 +205,10 @@ public class SmallWorld {
 		@Override
 		public void map(LongWritable key, EValue value, Context context)
 				throws IOException, InterruptedException {
+			// count # of destinations propagated
+			if (value.getType() == ValueUse.DESTINATION) {
+				context.getCounter(GraphCounter.DESTINATIONS_PROPAGATED).increment(1);
+			}
 			context.write(key, value);
 		}
 	}
@@ -274,8 +278,6 @@ public class SmallWorld {
 			}
 			if (distances.size() < _origins) {
 				for (long dest : destinations) {
-					context.getCounter(GraphCounter.DESTINATIONS_PROPAGATED)
-							.increment(1);
 					context.write(key, new EValue(ValueUse.DESTINATION, dest));
 				}
 			}
@@ -342,7 +344,7 @@ public class SmallWorld {
 				Context context) throws IOException, InterruptedException {
 			long sum = 0L;
 			for (LongWritable val : values) {
-				sum += 1; // do the counting
+				sum += 1L; // do the counting
 			}
 			context.write(key, new Text(Long.toString(sum)));
 		}
