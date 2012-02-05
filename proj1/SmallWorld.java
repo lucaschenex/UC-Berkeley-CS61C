@@ -66,27 +66,30 @@ public class SmallWorld {
 		public static final byte DISTANCE = 2;
 
 		/** What type of info this EValue holds. */
-		public byte type;
+		private byte type;
 		/** If type == DESTINATION, holds destination. If type == DISTANCE, holds distance. */
-		public long destDist;
+		private long destDist;
 		/** If type == DISTANCE, this is origin id. */
-		public long origin;
+		private long origin;
+		/** If type == DISTANCE, indicates if distance information for that origin still needs to be propagated to successors. */
+		private boolean needsPropagation;
 
 		/** Hadoop requires a default constructor for Writable. */
 		public EValue() {
-			this(EValue.BLANK, -1, -1);
+			this(EValue.BLANK, -1, -1, false);
 		}
 
 		/** Constructor for destination type. */
-		public EValue(byte type, long value) {
-			this(type, value, -1);
+		public EValue(byte type, long destinationId) {
+			this(type, destinationId, -1, false);
 		}
 
 		/** Constructor for distance type. */
-		public EValue(byte type, long value1, long value2) {
+		public EValue(byte type, long distance, long originId, boolean needsPropagation) {
 			this.type = type;
-			this.destDist = value1;
-			this.origin = value2;
+			this.destDist = distance;
+			this.origin = originId;
+			this.needsPropagation = needsPropagation;
 		}
 
 		/** Serializes object - needed for Writable. */
@@ -94,6 +97,7 @@ public class SmallWorld {
 			out.writeByte(type);
 			out.writeLong(destDist);
 			out.writeLong(origin);
+			out.writeBoolean(needsPropagation);
 		}
 
 		/** Deserializes object - needed for Writable. */
@@ -101,6 +105,7 @@ public class SmallWorld {
 			type = in.readByte();
 			destDist = in.readLong();
 			origin = in.readLong();
+			needsPropagation = in.readBoolean();
 		}
 
 		/** Returns distance or destination. */
@@ -111,6 +116,11 @@ public class SmallWorld {
 		/** Returns origin. */
 		public long getOrigin() {
 			return origin;
+		}
+
+		/** Returns whether distance has been propagated. */
+		public boolean needDistancePropagated() {
+			return needsPropagation;
 		}
 
 		/** Returns type. */
@@ -167,9 +177,9 @@ public class SmallWorld {
 		public void reduce(LongWritable key, Iterable<EValue> values,
 				Context context) throws IOException, InterruptedException {
 			if (Math.random() < 1.0 / denom) {
-				// 0 distance will help the next mapreduce know where to start.
+				// 0 distance tells next mapreduce where to start.
 				context.getCounter(GraphCounter.ORIGINS).increment(1);
-				context.write(key, new EValue(EValue.DISTANCE, 0, key.get()));
+				context.write(key, new EValue(EValue.DISTANCE, 0, key.get(), true));
 			}
 			for (EValue val : values) {
 				context.write(key, val);
@@ -212,7 +222,8 @@ public class SmallWorld {
 
 		/*
 		 * Updates distances by adding one to the appropriate distance of each
-		 * successor. For example:
+		 * successor. (If a distance already has been propagated,
+		 * we can skip this step) For example:
 		 * 
 		 * A -> B -> C -> D
 		 * 
@@ -230,7 +241,11 @@ public class SmallWorld {
 			ArrayList<Long> destinations = new ArrayList<Long>();
 			// distances maps from ea. origin to distance(key, origin)
 			HashMap<Long, Long> distances = new HashMap<Long, Long>();
-			// calculate min. distances and remember destinations
+			// Origins that still need to have distance propagated to successors.
+			HashMap<Long, Boolean> needToPropagate = new HashMap<Long, Boolean>();
+
+			/* Calculate min. distances, remember destinations, and note which distances
+			need to be propagated. */
 			for (EValue val : values) {
 				if (val.getType() == EValue.DESTINATION) {
 					destinations.add(val.getDistDest());
@@ -245,27 +260,48 @@ public class SmallWorld {
 					} else {
 						distances.put(origin, distance);
 					}
+					// We only need to propagate if a distance for that origin
+					// exists,
+					// and there are no pairs that indicate distance has been
+					// propagated.
+					if (val.needDistancePropagated()
+							&& !needToPropagate.containsKey(origin)) {
+						needToPropagate.put(origin, true);
+					} else {
+						needToPropagate.put(origin, false);
+					}
 				}
 			}
-			// emit updated distances
+
+			/*
+			 * Emit updated distances (the min. possible). Also mark that we
+			 * will have propagated distances for these particular origins in
+			 * distances, so set a flag that won't need to propagate any more.
+			 */
 			for (Map.Entry<Long, Long> pairing : distances.entrySet()) {
 				context.write(key,
 						new EValue(EValue.DISTANCE, pairing.getValue(),
-								pairing.getKey()));
+								pairing.getKey(), false));
 			}
+
 			/*
-			 * update distance for successors, one more than current emit a pair
-			 * (destination, DISTANCE distance+1 origin) done only if current
-			 * vertex has a distance value from that origin
+			 * Update distance for successors which have not had distances
+			 * propagated yet, but current vertex has a distance value for that
+			 * origin. Emit (destination, DISTANCE distance+1 origin_id
+			 * not_yet_propagated)
 			 */
-			for (long origin : distances.keySet()) {
-				long distance = distances.get(origin);
-				for (long destination : destinations) {
-					context.write(new LongWritable(destination), new EValue(
-							EValue.DISTANCE, distance + 1, origin));
+			for (Map.Entry<Long, Boolean> pair: needToPropagate.entrySet()) {
+				if (pair.getValue()) {
+					long origin = pair.getKey();
+					long distance = distances.get(origin);
+					for (long destination : destinations) {
+						context.write(new LongWritable(destination), new EValue(
+								EValue.DISTANCE, distance + 1, origin, true));
+					}
 				}
 			}
-			// emit destinations if not all distances have been found
+
+			// Emit destinations if not all distances have been found
 			if (distances.size() < _origins) {
 				context.getCounter(GraphCounter.DISTANCES_FOUND).increment(distances.size());
 				for (long dest : destinations) {
