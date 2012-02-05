@@ -41,59 +41,64 @@ public class SmallWorld {
 	/** Maximum depth for any breadth-first search. */
 	public static final int MAX_ITERATIONS = 20;
 
-	// Skeleton code uses this to share denom cmd-line arg across cluster
+	/** Shares denom cmd-line arg across cluster. */
 	public static final String DENOM_PATH = "denom.txt";
 
 	/** The number of starting points. */
 	public static long _origins = 0;
 
-	/** The number of starting points. */
+	/** Enums used for Hadoop counters. */
 	public static enum GraphCounter {
-		ORIGINS, DISTANCES_FOUND
-	};
-
-	/** What type of value. */
-	public static enum ValueUse {
-		DESTINATION, DISTANCE, BLANK
-	};
+		/** Count number of starting points. */
+		ORIGINS,
+		/** Count number of distances found. */
+		DISTANCES_FOUND;
+	}
 
 	/** Stores information for each vertex in the graph. */
 	public static class EValue implements Writable {
 
-		/** What this value represents. */
-		public ValueUse type;
-		/** The first value. Either destination or distance. */
+		/** Indicates uninitialized EValue. */
+		public static final byte BLANK = 0;
+		/** Indicates EValue used to store destination (represents edge). */
+		public static final byte DESTINATION = 1;
+		/** Indicates EValue used to store distance (and the origin where that distance is measured from). */
+		public static final byte DISTANCE = 2;
+
+		/** What type of info this EValue holds. */
+		public byte type;
+		/** If type == DESTINATION, holds destination. If type == DISTANCE, holds distance. */
 		public long destDist;
-		/** The second value. If type == DISTANCE, this is origin id. */
+		/** If type == DISTANCE, this is origin id. */
 		public long origin;
 
-		/** Hadoop requires a default constructor. */
+		/** Hadoop requires a default constructor for Writable. */
 		public EValue() {
-			this(ValueUse.BLANK, -1, -1);
+			this(EValue.BLANK, -1, -1);
 		}
 
-		/** For destination type. */
-		public EValue(ValueUse type, long value) {
+		/** Constructor for destination type. */
+		public EValue(byte type, long value) {
 			this(type, value, -1);
 		}
 
-		/** For distance type. */
-		public EValue(ValueUse type, long value1, long value2) {
+		/** Constructor for distance type. */
+		public EValue(byte type, long value1, long value2) {
 			this.type = type;
 			this.destDist = value1;
 			this.origin = value2;
 		}
 
-		// Serializes object - needed for Writable
+		/** Serializes object - needed for Writable. */
 		public void write(DataOutput out) throws IOException {
-			out.writeUTF(type.name());
+			out.writeByte(type);
 			out.writeLong(destDist);
 			out.writeLong(origin);
 		}
 
-		// Deserializes object - needed for Writable
+		/** Deserializes object - needed for Writable. */
 		public void readFields(DataInput in) throws IOException {
-			type = ValueUse.valueOf(in.readUTF());
+			type = in.readByte();
 			destDist = in.readLong();
 			origin = in.readLong();
 		}
@@ -109,7 +114,7 @@ public class SmallWorld {
 		}
 
 		/** Returns type. */
-		public ValueUse getType() {
+		public byte getType() {
 			return type;
 		}
 	}
@@ -121,7 +126,7 @@ public class SmallWorld {
 		@Override
 		public void map(LongWritable key, LongWritable value, Context context)
 				throws IOException, InterruptedException {
-			context.write(key, new EValue(ValueUse.DESTINATION, value.get()));
+			context.write(key, new EValue(EValue.DESTINATION, value.get()));
 		}
 	}
 
@@ -157,14 +162,14 @@ public class SmallWorld {
 			}
 		}
 
-		/** Identity reduce. */
+		/** Identity reduce with random selection of vertices. */
 		@Override
 		public void reduce(LongWritable key, Iterable<EValue> values,
 				Context context) throws IOException, InterruptedException {
 			if (Math.random() < 1.0 / denom) {
 				// 0 distance will help the next mapreduce know where to start.
 				context.getCounter(GraphCounter.ORIGINS).increment(1);
-				context.write(key, new EValue(ValueUse.DISTANCE, 0, key.get()));
+				context.write(key, new EValue(EValue.DISTANCE, 0, key.get()));
 			}
 			for (EValue val : values) {
 				context.write(key, val);
@@ -172,7 +177,7 @@ public class SmallWorld {
 		}
 	}
 
-	// Shares denom argument across the cluster via DistributedCache
+	/** Shares denom argument across the cluster via DistributedCache. */
 	public static void shareDenom(String denomStr, Configuration conf) {
 		try {
 			Path localDenomPath = new Path(DENOM_PATH + "-source");
@@ -191,7 +196,7 @@ public class SmallWorld {
 		}
 	}
 
-	/** Does nothing. */
+	/** Identity map. */
 	public static class SearchMap extends
 			Mapper<LongWritable, EValue, LongWritable, EValue> {
 		@Override
@@ -206,20 +211,17 @@ public class SmallWorld {
 			Reducer<LongWritable, EValue, LongWritable, EValue> {
 
 		/*
-		 * Updates distances. Probably VERY INEFFICIENT right now. I'm adding
-		 * one to the appropriate distance of each successor. For example:
+		 * Updates distances by adding one to the appropriate distance of each
+		 * successor. For example:
 		 * 
 		 * A -> B -> C -> D
 		 * 
 		 * B is distance 1 from A. So we know that C must be 1 more away from A
 		 * than B.
 		 * 
-		 * The problem is that this gets called each time. I haven't implemented
-		 * a check that says the distance of C from A has been found -- that we
-		 * can stop. I can't think of a better way. This means right now though
-		 * that after ea. iteration, a pair of points say (E, F) might have
-		 * several distances say 4, 8, 10, 12. The purpose of the HashMap is to
-		 * store the minimum distance each time.
+		 * After ea. iteration, a pair of points say (E, F) might have several
+		 * distances say 4, 8, 10, 12. The purpose of the HashMap is to store
+		 * the minimum distance each time.
 		 */
 		@Override
 		public void reduce(LongWritable key, Iterable<EValue> values,
@@ -230,9 +232,9 @@ public class SmallWorld {
 			HashMap<Long, Long> distances = new HashMap<Long, Long>();
 			// calculate min. distances and remember destinations
 			for (EValue val : values) {
-				if (val.getType() == ValueUse.DESTINATION) {
+				if (val.getType() == EValue.DESTINATION) {
 					destinations.add(val.getDistDest());
-				} else if (val.getType() == ValueUse.DISTANCE) {
+				} else if (val.getType() == EValue.DISTANCE) {
 					// take minimum distance ea. time
 					long origin = val.getOrigin();
 					long distance = val.getDistDest();
@@ -248,7 +250,7 @@ public class SmallWorld {
 			// emit updated distances
 			for (Map.Entry<Long, Long> pairing : distances.entrySet()) {
 				context.write(key,
-						new EValue(ValueUse.DISTANCE, pairing.getValue(),
+						new EValue(EValue.DISTANCE, pairing.getValue(),
 								pairing.getKey()));
 			}
 			/*
@@ -260,14 +262,14 @@ public class SmallWorld {
 				long distance = distances.get(origin);
 				for (long destination : destinations) {
 					context.write(new LongWritable(destination), new EValue(
-							ValueUse.DISTANCE, distance + 1, origin));
+							EValue.DISTANCE, distance + 1, origin));
 				}
 			}
-			// emit destinations if all distances are not found
+			// emit destinations if not all distances have been found
 			if (distances.size() < _origins) {
 				context.getCounter(GraphCounter.DISTANCES_FOUND).increment(distances.size());
 				for (long dest : destinations) {
-					context.write(key, new EValue(ValueUse.DESTINATION, dest));
+					context.write(key, new EValue(EValue.DESTINATION, dest));
 				}
 			}
 		}
@@ -279,7 +281,7 @@ public class SmallWorld {
 		@Override
 		public void map(LongWritable key, EValue value, Context context)
 				throws IOException, InterruptedException {
-			if (value.getType() == ValueUse.DISTANCE) {
+			if (value.getType() == EValue.DISTANCE) {
 				context.write(key, value);
 			}
 		}
@@ -315,7 +317,7 @@ public class SmallWorld {
 		}
 	}
 
-	/** Do nothing. */
+	/** Identity map. */
 	public static class HistogramMap extends
 			Mapper<LongWritable, LongWritable, LongWritable, LongWritable> {
 		@Override
@@ -325,7 +327,7 @@ public class SmallWorld {
 		}
 	}
 
-	/** Make the histogram. Probably have to change output to a list of longs? */
+	/** Total counts for ea. distance value. */
 	public static class HistogramReduce extends
 			Reducer<LongWritable, LongWritable, LongWritable, Text> {
 		@Override
@@ -333,7 +335,7 @@ public class SmallWorld {
 				Context context) throws IOException, InterruptedException {
 			long sum = 0L;
 			for (LongWritable val : values) {
-				sum += 1L; // do the counting
+				sum += 1L;
 			}
 			context.write(key, new Text(Long.toString(sum)));
 		}
@@ -377,7 +379,6 @@ public class SmallWorld {
 		// Repeats your BFS mapreduce
 		int i = 0;
 		long prevDestinations = -1;
-		// Will need to change terminating conditions to respond to data
 		while (i < MAX_ITERATIONS) {
 			job = new Job(conf, "bfs" + i);
 			job.setJarByClass(SmallWorld.class);
