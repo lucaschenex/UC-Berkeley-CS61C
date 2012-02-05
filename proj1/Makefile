@@ -37,17 +37,13 @@ clean:
 	rm -rf classes $(TARGET) *-out
 
 # test with the ring graph 4 vertices
-test-ring:
-	make clean
-	make all
+test-ring: clean all
 	hadoop jar sw.jar SmallWorld ~cs61c/p1data/ring4.seq final-out 1
 	cat final-out/part*
 
 # test with the hep graph ~35000 vertices
-test-hep:
-	make clean
-	make all
+test-hep: clean all
 	hadoop jar sw.jar SmallWorld ~cs61c/p1data/cit-HepPh.sequ final-out 9876
 	cat final-out/part*
 
-.PHONY: clean all
+.PHONY: clean all test-ring test-hep
