@@ -39,9 +39,7 @@ import org.apache.hadoop.util.GenericOptionsParser;
 public class SmallWorld {
 
 	/** Maximum depth for any breadth-first search. */
-	public static final int MAX_ITERATIONS = 4;
-	/** An unreachable distance. */
-	public static final int MAX_DISTANCE = MAX_ITERATIONS + 1;
+	public static final int MAX_ITERATIONS = 20;
 
 	// Skeleton code uses this to share denom cmd-line arg across cluster
 	public static final String DENOM_PATH = "denom.txt";
@@ -51,7 +49,7 @@ public class SmallWorld {
 
 	/** The number of starting points. */
 	public static enum GraphCounter {
-		ORIGINS, DESTINATIONS_PROPAGATED
+		ORIGINS, DISTANCES_FOUND
 	};
 
 	/** What type of value. */
@@ -116,9 +114,24 @@ public class SmallWorld {
 		}
 	}
 
-	/** Loads map. */
+	/** Formats edges appropriately. */
 	public static class LoaderMap extends
 			Mapper<LongWritable, LongWritable, LongWritable, EValue> {
+
+		@Override
+		public void map(LongWritable key, LongWritable value, Context context)
+				throws IOException, InterruptedException {
+			context.write(key, new EValue(ValueUse.DESTINATION, value.get()));
+		}
+	}
+
+	/**
+	 * Selects vertices as starting points with probability 1/denom. Those
+	 * get marked with distance 0.
+	 */
+	public static class LoadReduce extends
+			Reducer<LongWritable, EValue, LongWritable, EValue> {
+		/** Denominator for probability. */
 		public long denom;
 
 		/*
@@ -144,39 +157,20 @@ public class SmallWorld {
 			}
 		}
 
-		/*
-		 * Select vertices as starting points with probability 1/denom. Those
-		 * get marked with distance 0.
-		 */
+		/** Identity reduce. */
 		@Override
-		public void map(LongWritable key, LongWritable value, Context context)
-				throws IOException, InterruptedException {
-			context.write(key, new EValue(ValueUse.DESTINATION, value.get())); // propagate graph
+		public void reduce(LongWritable key, Iterable<EValue> values,
+				Context context) throws IOException, InterruptedException {
 			if (Math.random() < 1.0 / denom) {
 				// 0 distance will help the next mapreduce know where to start.
 				context.getCounter(GraphCounter.ORIGINS).increment(1);
 				context.write(key, new EValue(ValueUse.DISTANCE, 0, key.get()));
 			}
-		}
-	}
-
-	/** Does nothing. */
-	public static class LoadReduce extends
-			Reducer<LongWritable, EValue, LongWritable, EValue> {
-
-		/** Identity reduce. */
-		@Override
-		public void reduce(LongWritable key, Iterable<EValue> values,
-				Context context) throws IOException, InterruptedException {
 			for (EValue val : values) {
 				context.write(key, val);
 			}
 		}
 	}
-
-	/*
-	 * Insert your mapreduces here (still feel free to edit elsewhere)
-	 */
 
 	// Shares denom argument across the cluster via DistributedCache
 	public static void shareDenom(String denomStr, Configuration conf) {
@@ -271,7 +265,7 @@ public class SmallWorld {
 			}
 			// emit destinations if all distances are not found
 			if (distances.size() < _origins) {
-				context.getCounter(GraphCounter.DESTINATIONS_PROPAGATED).increment(distances.size());
+				context.getCounter(GraphCounter.DISTANCES_FOUND).increment(distances.size());
 				for (long dest : destinations) {
 					context.write(key, new EValue(ValueUse.DESTINATION, dest));
 				}
@@ -407,7 +401,7 @@ public class SmallWorld {
 			job.waitForCompletion(true);
 			i++;
 			long destinationsPropagated = job.getCounters()
-					.findCounter(GraphCounter.DESTINATIONS_PROPAGATED)
+					.findCounter(GraphCounter.DISTANCES_FOUND)
 					.getValue();
 			if (prevDestinations == destinationsPropagated) {
 				break;
