@@ -43,7 +43,7 @@ test-ring: clean all
 
 # test with the hep graph ~35000 vertices
 test-hep: clean all
-	hadoop jar sw.jar SmallWorld ~cs61c/p1data/cit-HepPh.sequ final-out 9876
+	hadoop jar sw.jar SmallWorld ~cs61c/p1data/cit-HepPh.sequ final-out 5000
 	cat final-out/part*
 
 .PHONY: clean all test-ring test-hep
