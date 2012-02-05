@@ -260,10 +260,11 @@ public class SmallWorld {
 					} else {
 						distances.put(origin, distance);
 					}
-					// We only need to propagate if a distance for that origin
-					// exists,
-					// and there are no pairs that indicate distance has been
-					// propagated.
+					/*
+					 * Propagate distance for an origin only if that distance
+					 * has been found, and no pairs indicate distance has
+					 * already been propagated.
+					 */
 					if (val.needDistancePropagated()
 							&& !needToPropagate.containsKey(origin)) {
 						needToPropagate.put(origin, true);
@@ -365,7 +366,7 @@ public class SmallWorld {
 
 	/** Total counts for ea. distance value. */
 	public static class HistogramReduce extends
-			Reducer<LongWritable, LongWritable, LongWritable, Text> {
+			Reducer<LongWritable, LongWritable, LongWritable, LongWritable> {
 		@Override
 		public void reduce(LongWritable key, Iterable<LongWritable> values,
 				Context context) throws IOException, InterruptedException {
@@ -373,11 +374,14 @@ public class SmallWorld {
 			for (LongWritable val : values) {
 				sum += 1L;
 			}
-			context.write(key, new Text(Long.toString(sum)));
+			context.write(key, new LongWritable(sum));
 		}
 	}
 
 	public static void main(String[] rawArgs) throws Exception {
+		// measure time taken
+		long startTime = System.currentTimeMillis();
+
 		GenericOptionsParser parser = new GenericOptionsParser(rawArgs);
 		Configuration conf = parser.getConfiguration();
 		String[] args = parser.getRemainingArgs();
@@ -408,13 +412,11 @@ public class SmallWorld {
 		job.waitForCompletion(true);
 
 		// Loads number of origins
-		_origins = job.getCounters().findCounter(GraphCounter.ORIGINS)
-				.getValue();
-		System.out.printf("%d origins selected\n", _origins);
+		_origins = job.getCounters().findCounter(GraphCounter.ORIGINS).getValue();
 
 		// Repeats your BFS mapreduce
 		int i = 0;
-		long prevDestinations = -1;
+		long prevDistancesFound = -1;
 		while (i < MAX_ITERATIONS) {
 			job = new Job(conf, "bfs" + i);
 			job.setJarByClass(SmallWorld.class);
@@ -437,13 +439,12 @@ public class SmallWorld {
 
 			job.waitForCompletion(true);
 			i++;
-			long destinationsPropagated = job.getCounters()
-					.findCounter(GraphCounter.DISTANCES_FOUND)
-					.getValue();
-			if (prevDestinations == destinationsPropagated) {
+			long distancesFound =
+					job.getCounters().findCounter(GraphCounter.DISTANCES_FOUND).getValue();
+			if (prevDistancesFound == distancesFound) {
 				break;
 			} else {
-				prevDestinations = destinationsPropagated;
+				prevDistancesFound = distancesFound;
 			}
 		}
 
@@ -476,7 +477,7 @@ public class SmallWorld {
 		job.setMapOutputKeyClass(LongWritable.class);
 		job.setMapOutputValueClass(LongWritable.class);
 		job.setOutputKeyClass(LongWritable.class);
-		job.setOutputValueClass(Text.class);
+		job.setOutputValueClass(LongWritable.class);
 
 		job.setMapperClass(HistogramMap.class);
 		job.setReducerClass(HistogramReduce.class);
@@ -490,5 +491,10 @@ public class SmallWorld {
 		FileOutputFormat.setOutputPath(job, new Path(args[1]));
 
 		job.waitForCompletion(true);
+
+		System.out.printf("\n\n");
+		System.out.printf("%d origins selected\n\n", _origins);
+		System.out.printf("%3.3fs elapsed\n", (System.currentTimeMillis() - startTime) / 1000.0);
+		System.out.printf("\n\n");
 	}
 }
