@@ -22,6 +22,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.filecache.DistributedCache;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.GenericWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Writable;
@@ -55,62 +56,59 @@ public class SmallWorld {
 		DISTANCES_FOUND;
 	}
 
-	/** Stores information for each vertex in the graph. */
-	public static class EValue implements Writable {
-
-		/** Indicates uninitialized EValue. */
-		public static final byte BLANK = 0;
-		/** Indicates EValue used to store destination (represents edge). */
-		public static final byte DESTINATION = 1;
-		/** Indicates EValue used to store distance (and the origin where that distance is measured from). */
-		public static final byte DISTANCE = 2;
-
-		/** What type of info this EValue holds. */
-		private byte type;
-		/** If type == DESTINATION, holds destination. If type == DISTANCE, holds distance. */
-		private long destDist;
-		/** If type == DISTANCE, this is origin id. */
-		private long origin;
-		/** If type == DISTANCE, indicates if distance information for that origin still needs to be propagated to successors. */
-		private boolean needsPropagation;
+	/** Wrapper for DistanceValue and DestinationsValue. */
+	public static class EValue extends GenericWritable {
 
 		/** Hadoop requires a default constructor for Writable. */
 		public EValue() {
-			this(EValue.BLANK, -1, -1, false);
 		}
 
-		/** Constructor for destination type. */
-		public EValue(byte type, long destinationId) {
-			this(type, destinationId, -1, false);
+		@Override
+		protected Class<? extends Writable>[] getTypes() {
+			return CLASSES;
 		}
 
-		/** Constructor for distance type. */
-		public EValue(byte type, long distance, long originId, boolean needsPropagation) {
-			this.type = type;
-			this.destDist = distance;
+		private static final Class[] CLASSES = {DistanceValue.class, DestinationsValue.class};
+	}
+
+	/** Stores distance information. */
+	public static class DistanceValue implements Writable {
+
+		/** Holds distance. */
+		private int distance;
+		/** Origin id where distance is measured from. */
+		private long origin;
+		/** Indicates if distance information for that origin still needs to be propagated to successors. */
+		private boolean needsPropagation;
+
+		/** Hadoop requires a default constructor for Writable. */
+		public DistanceValue() {
+		}
+
+		/** The DISTANCE from the ORIGINID to the key, and whether propagation from key is needed. */
+		public DistanceValue(int distance, long originId, boolean needsPropagation) {
+			this.distance = distance;
 			this.origin = originId;
 			this.needsPropagation = needsPropagation;
 		}
 
 		/** Serializes object - needed for Writable. */
 		public void write(DataOutput out) throws IOException {
-			out.writeByte(type);
-			out.writeLong(destDist);
+			out.writeInt(distance);
 			out.writeLong(origin);
 			out.writeBoolean(needsPropagation);
 		}
 
 		/** Deserializes object - needed for Writable. */
 		public void readFields(DataInput in) throws IOException {
-			type = in.readByte();
-			destDist = in.readLong();
+			distance = in.readInt();
 			origin = in.readLong();
 			needsPropagation = in.readBoolean();
 		}
 
-		/** Returns distance or destination. */
-		public long getDistDest() {
-			return destDist;
+		/** Returns distance. */
+		public int getDistance() {
+			return distance;
 		}
 
 		/** Returns origin. */
@@ -122,21 +120,57 @@ public class SmallWorld {
 		public boolean needDistancePropagated() {
 			return needsPropagation;
 		}
+	}
 
-		/** Returns type. */
-		public byte getType() {
-			return type;
+	/** Stores destinations information. */
+	public static class DestinationsValue implements Writable {
+
+		/** Number of destinations. */
+		private int nDestinations;
+		/** Holds destination vertices. */
+		private long[] destinations;
+
+		/** Hadoop requires a default constructor for Writable. */
+		public DestinationsValue() {
+		}
+
+		/** DestinationIds list destinations for the key. */
+		public DestinationsValue(long[] destinationIds) {
+			this.nDestinations = destinationIds.length;
+			this.destinations = destinationIds;
+		}
+
+		/** Serializes object - needed for Writable. */
+		public void write(DataOutput out) throws IOException {
+			out.writeInt(nDestinations);
+			for (long destination : destinations) {
+				out.writeLong(destination);
+			}
+		}
+
+		/** Deserializes object - needed for Writable. */
+		public void readFields(DataInput in) throws IOException {
+			nDestinations = in.readInt();
+			destinations = new long[nDestinations];
+			for (int i = 0; i < nDestinations; i++) {
+				destinations[i] = in.readLong();
+			}
+		}
+
+		/** Returns destinations. */
+		public long[] getDestinations() {
+			return destinations;
 		}
 	}
 
-	/** Formats edges appropriately. */
+	/** Identity Map. */
 	public static class LoaderMap extends
-			Mapper<LongWritable, LongWritable, LongWritable, EValue> {
+			Mapper<LongWritable, LongWritable, LongWritable, LongWritable> {
 
 		@Override
 		public void map(LongWritable key, LongWritable value, Context context)
 				throws IOException, InterruptedException {
-			context.write(key, new EValue(EValue.DESTINATION, value.get()));
+			context.write(key, value);
 		}
 	}
 
@@ -145,7 +179,8 @@ public class SmallWorld {
 	 * get marked with distance 0.
 	 */
 	public static class LoadReduce extends
-			Reducer<LongWritable, EValue, LongWritable, EValue> {
+			Reducer<LongWritable, LongWritable, LongWritable, EValue> {
+
 		/** Denominator for probability. */
 		public long denom;
 
@@ -172,18 +207,35 @@ public class SmallWorld {
 			}
 		}
 
-		/** Identity reduce with random selection of vertices. */
+		/**
+		 * Randomly select vertices as starting points and output a
+		 * DistanceValue for those. Then group outgoing edges together and store
+		 * successors in DestinationsValue.
+		 */
 		@Override
-		public void reduce(LongWritable key, Iterable<EValue> values,
+		public void reduce(LongWritable key, Iterable<LongWritable> values,
 				Context context) throws IOException, InterruptedException {
+			//Wraps output
+			EValue outWrapper = new EValue();
+
+			// Randomly select this key as a starting vertex: 0 distance indicates start.
 			if (Math.random() < 1.0 / denom) {
-				// 0 distance tells next mapreduce where to start.
 				context.getCounter(GraphCounter.ORIGINS).increment(1);
-				context.write(key, new EValue(EValue.DISTANCE, 0, key.get(), true));
+				outWrapper.set(new DistanceValue(0, key.get(), true));
+				context.write(key, outWrapper);
 			}
-			for (EValue val : values) {
-				context.write(key, val);
+
+			// Group successors together.
+			ArrayList<Long> destinations = new ArrayList<Long>();
+			for (LongWritable val : values) {
+				destinations.add(val.get());
 			}
+			long[] primitiveIds = new long[destinations.size()];
+			for (int i = 0; i < primitiveIds.length; i++) {
+				primitiveIds[i] = destinations.get(i);
+			}
+			outWrapper.set(new DestinationsValue(primitiveIds));
+			context.write(key, outWrapper);
 		}
 	}
 
@@ -237,22 +289,26 @@ public class SmallWorld {
 		@Override
 		public void reduce(LongWritable key, Iterable<EValue> values,
 				Context context) throws IOException, InterruptedException {
+			//Wraps output
+			EValue outWrapper = new EValue();
 			// keeps track of all successors for this vertex (key)
-			ArrayList<Long> destinations = new ArrayList<Long>();
+			long[] destinations = null;
 			// distances maps from ea. origin to distance(key, origin)
-			HashMap<Long, Long> distances = new HashMap<Long, Long>();
+			HashMap<Long, Integer> distances = new HashMap<Long, Integer>();
 			// Origins that still need to have distance propagated to successors.
 			HashMap<Long, Boolean> needToPropagate = new HashMap<Long, Boolean>();
 
 			/* Calculate min. distances, remember destinations, and note which distances
 			need to be propagated. */
-			for (EValue val : values) {
-				if (val.getType() == EValue.DESTINATION) {
-					destinations.add(val.getDistDest());
-				} else if (val.getType() == EValue.DISTANCE) {
+			for (EValue wrapper : values) {
+				Writable val = wrapper.get();
+				if (val instanceof DestinationsValue) {
+					destinations = ((DestinationsValue) val).getDestinations();
+				} else if (val instanceof DistanceValue) {
+					DistanceValue dVal = (DistanceValue) val;
 					// take minimum distance ea. time
-					long origin = val.getOrigin();
-					long distance = val.getDistDest();
+					long origin = dVal.getOrigin();
+					int distance = dVal.getDistance();
 					if (distances.containsKey(origin)) {
 						if (distances.get(origin) > distance) {
 							distances.put(origin, distance);
@@ -265,12 +321,14 @@ public class SmallWorld {
 					 * has been found, and no pairs indicate distance has
 					 * already been propagated.
 					 */
-					if (val.needDistancePropagated()
+					if (dVal.needDistancePropagated()
 							&& !needToPropagate.containsKey(origin)) {
 						needToPropagate.put(origin, true);
 					} else {
 						needToPropagate.put(origin, false);
 					}
+				} else {
+					throw new IOException("Unknown value " + val.getClass());
 				}
 			}
 
@@ -279,10 +337,9 @@ public class SmallWorld {
 			 * will have propagated distances for these particular origins in
 			 * distances, so set a flag that won't need to propagate any more.
 			 */
-			for (Map.Entry<Long, Long> pairing : distances.entrySet()) {
-				context.write(key,
-						new EValue(EValue.DISTANCE, pairing.getValue(),
-								pairing.getKey(), false));
+			for (Map.Entry<Long, Integer> pairing : distances.entrySet()) {
+				outWrapper.set(new DistanceValue(pairing.getValue(), pairing.getKey(), false));
+				context.write(key, outWrapper);
 			}
 
 			/*
@@ -294,10 +351,10 @@ public class SmallWorld {
 			for (Map.Entry<Long, Boolean> pair: needToPropagate.entrySet()) {
 				if (pair.getValue()) {
 					long origin = pair.getKey();
-					long distance = distances.get(origin);
+					int distance = distances.get(origin);
 					for (long destination : destinations) {
-						context.write(new LongWritable(destination), new EValue(
-								EValue.DISTANCE, distance + 1, origin, true));
+						outWrapper.set(new DistanceValue(distance + 1, origin, true));
+						context.write(new LongWritable(destination), outWrapper);
 					}
 				}
 			}
@@ -305,41 +362,40 @@ public class SmallWorld {
 			// Emit destinations if not all distances have been found
 			if (distances.size() < _origins) {
 				context.getCounter(GraphCounter.DISTANCES_FOUND).increment(distances.size());
-				for (long dest : destinations) {
-					context.write(key, new EValue(EValue.DESTINATION, dest));
-				}
+				outWrapper.set(new DestinationsValue(destinations));
+				context.write(key, outWrapper);
 			}
 		}
 	}
 
 	/** Just keep distance information. */
 	public static class CleanupMap extends
-			Mapper<LongWritable, EValue, LongWritable, EValue> {
+			Mapper<LongWritable, EValue, LongWritable, DistanceValue> {
 		@Override
 		public void map(LongWritable key, EValue value, Context context)
 				throws IOException, InterruptedException {
-			if (value.getType() == EValue.DISTANCE) {
-				context.write(key, value);
+			Writable unwrapped = value.get();
+			if (unwrapped instanceof DistanceValue) {
+				context.write(key, (DistanceValue) unwrapped);
 			}
 		}
 	}
 
 	/** Output (distance, 1) for each origin of each key. */
 	public static class CleanupReduce extends
-			Reducer<LongWritable, EValue, LongWritable, LongWritable> {
+			Reducer<LongWritable, DistanceValue, LongWritable, LongWritable> {
 
 		public static LongWritable ONE = new LongWritable(1L);
 
 		@Override
-		public void reduce(LongWritable key, Iterable<EValue> values,
+		public void reduce(LongWritable key, Iterable<DistanceValue> values,
 				Context context) throws IOException, InterruptedException {
-			// distances maps from ea. origin to distance of this key from that
-			// origin
-			HashMap<Long, Long> distances = new HashMap<Long, Long>();
-			for (EValue val : values) {
+			// distances maps from ea. origin to distance(key, origin)
+			HashMap<Long, Integer> distances = new HashMap<Long, Integer>();
+			for (DistanceValue dVal : values) {
 				// take minimum distance ea. time
-				long origin = val.getOrigin();
-				long distance = val.getDistDest();
+				long origin = dVal.getOrigin();
+				int distance = dVal.getDistance();
 				if (distances.containsKey(origin)) {
 					if (distances.get(origin) > distance) {
 						distances.put(origin, distance);
@@ -348,7 +404,7 @@ public class SmallWorld {
 					distances.put(origin, distance);
 				}
 			}
-			for (Long distance : distances.values()) {
+			for (Integer distance : distances.values()) {
 				context.write(new LongWritable(distance), ONE);
 			}
 		}
@@ -394,7 +450,7 @@ public class SmallWorld {
 		job.setJarByClass(SmallWorld.class);
 
 		job.setMapOutputKeyClass(LongWritable.class);
-		job.setMapOutputValueClass(EValue.class);
+		job.setMapOutputValueClass(LongWritable.class);
 		job.setOutputKeyClass(LongWritable.class);
 		job.setOutputValueClass(EValue.class);
 
@@ -453,7 +509,7 @@ public class SmallWorld {
 		job.setJarByClass(SmallWorld.class);
 
 		job.setMapOutputKeyClass(LongWritable.class);
-		job.setMapOutputValueClass(EValue.class);
+		job.setMapOutputValueClass(DistanceValue.class);
 		job.setOutputKeyClass(LongWritable.class);
 		job.setOutputValueClass(LongWritable.class);
 
