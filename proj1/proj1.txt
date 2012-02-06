@@ -1,0 +1,16 @@
+1. Run your code on hollywood.sequ with denom=100000 on clusters of size 6, 9, and 12. How long does each take? How many searches did each perform? How many reducers did you use for each? (Read the rest of the questions to see what other data you will need)
+
+2. For the Hollywood dataset, at what distance are the 50th, 90th, and 95 percentiles?
+
+3. What was the median processing rate (MB/s) for 6, 9, and 12 instances? You can approximate the data size to be (input size) * (# of searches).
+
+4. What was the speedup for 9 and 12 instances relative to 6 instances? What do you conclude about how well Hadoop parallelizes your work? Is this a case of strong scaling or weak scaling? Why or why not?
+
+5. What is the purpose of including the combiner in the histogram skeleton code? Does its inclusion affect performance much? Why or why not? Could you have used a combiner in your other mapreduces? Why or why not?
+
+6. What was the price per GB processed for each cluster size? (Recall that an extra-large instance costs $0.68 per hour, rounded up to the nearest hour.)
+
+7. How many dollars in EC2 credits did you use to complete this project? If ec2-usage returns bogus values, please try to approximate (and indicate this).
+
+8. Extra: What did you think of this project? This is the first time it has been offered, but hopefully not the last. What did you like, not like, or think we should change?
+
