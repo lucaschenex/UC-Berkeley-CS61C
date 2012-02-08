@@ -1,4 +1,6 @@
 1. Run your code on hollywood.sequ with denom=100000 on clusters of size 6, 9, and 12. How long does each take? How many searches did each perform? How many reducers did you use for each? (Read the rest of the questions to see what other data you will need)
+6: 380 sec (2 searches, 1 reduce/search)
+9: 
 
 2. For the Hollywood dataset, at what distance are the 50th, 90th, and 95 percentiles?
 

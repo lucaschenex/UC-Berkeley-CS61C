@@ -42,6 +42,13 @@ public class SmallWorld {
 	/** Maximum depth for any breadth-first search. */
 	public static final int MAX_ITERATIONS = 20;
 
+        /** The number of clusters to use in Load, Search, and Clean Reduce steps.
+         *  Should equal the number of clusters used. */
+        public static final int REDUCERS = 6;
+
+        /** True if on EC2. */
+        public static final boolean onEC2 = false;
+
 	/** Shares denom cmd-line arg across cluster. */
 	public static final String DENOM_PATH = "denom.txt";
 
@@ -438,6 +445,12 @@ public class SmallWorld {
 		// measure time taken
 		long startTime = System.currentTimeMillis();
 
+		// Uses hdfs if on EC2
+		String path = "";
+		if (onEC2) {
+		    path += "hdfs:///";
+		}
+
 		GenericOptionsParser parser = new GenericOptionsParser(rawArgs);
 		Configuration conf = parser.getConfiguration();
 		String[] args = parser.getRemainingArgs();
@@ -448,6 +461,8 @@ public class SmallWorld {
 		// Setting up mapreduce job to load in graph
 		Job job = new Job(conf, "load graph");
 		job.setJarByClass(SmallWorld.class);
+
+		//job.setNumReduceTasks(REDUCERS);
 
 		job.setMapOutputKeyClass(LongWritable.class);
 		job.setMapOutputValueClass(LongWritable.class);
@@ -462,7 +477,7 @@ public class SmallWorld {
 
 		// Input from command-line argument, output to predictable place
 		FileInputFormat.addInputPath(job, new Path(args[0]));
-		FileOutputFormat.setOutputPath(job, new Path("bfs-0-out"));
+		FileOutputFormat.setOutputPath(job, new Path(path + "sw-out/bfs-0-out"));
 
 		// Actually starts job, and waits for it to finish
 		job.waitForCompletion(true);
@@ -477,6 +492,8 @@ public class SmallWorld {
 			job = new Job(conf, "bfs" + i);
 			job.setJarByClass(SmallWorld.class);
 
+			//job.setNumReduceTasks(REDUCERS);
+
 			job.setMapOutputKeyClass(LongWritable.class);
 			job.setMapOutputValueClass(EValue.class);
 			job.setOutputKeyClass(LongWritable.class);
@@ -489,8 +506,8 @@ public class SmallWorld {
 			job.setOutputFormatClass(SequenceFileOutputFormat.class);
 
 			// Notice how each mapreduce job gets gets its own output dir
-			FileInputFormat.addInputPath(job, new Path("bfs-" + i + "-out"));
-			FileOutputFormat.setOutputPath(job, new Path("bfs-" + (i + 1)
+			FileInputFormat.addInputPath(job, new Path(path + "sw-out/bfs-" + i + "-out"));
+			FileOutputFormat.setOutputPath(job, new Path(path + "sw-out/bfs-" + (i + 1)
 					+ "-out"));
 
 			job.waitForCompletion(true);
@@ -508,6 +525,8 @@ public class SmallWorld {
 		job = new Job(conf, "cleanup");
 		job.setJarByClass(SmallWorld.class);
 
+         	//job.setNumReduceTasks(REDUCERS);
+
 		job.setMapOutputKeyClass(LongWritable.class);
 		job.setMapOutputValueClass(DistanceValue.class);
 		job.setOutputKeyClass(LongWritable.class);
@@ -519,9 +538,9 @@ public class SmallWorld {
 		job.setInputFormatClass(SequenceFileInputFormat.class);
 		job.setOutputFormatClass(SequenceFileOutputFormat.class);
 
-		FileInputFormat.addInputPath(job, new Path("bfs-" + i + "-out"));
+		FileInputFormat.addInputPath(job, new Path(path + "sw-out/bfs-" + i + "-out"));
 		FileOutputFormat
-				.setOutputPath(job, new Path("bfs-" + (i + 1) + "-out"));
+				.setOutputPath(job, new Path(path + "sw-out/bfs-" + (i + 1) + "-out"));
 
 		job.waitForCompletion(true);
 		i++;
@@ -543,7 +562,7 @@ public class SmallWorld {
 
 		// By declaring i above outside of loop conditions, can use it
 		// here to get last bfs output to be input to histogram
-		FileInputFormat.addInputPath(job, new Path("bfs-" + i + "-out"));
+		FileInputFormat.addInputPath(job, new Path(path + "sw-out/bfs-" + i + "-out"));
 		FileOutputFormat.setOutputPath(job, new Path(args[1]));
 
 		job.waitForCompletion(true);
