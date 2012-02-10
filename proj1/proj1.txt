@@ -1,10 +1,37 @@
 1. Run your code on hollywood.sequ with denom=100000 on clusters of size 6, 9, and 12. How long does each take? How many searches did each perform? How many reducers did you use for each? (Read the rest of the questions to see what other data you will need)
-6: 380 sec (2 searches, 1 reduce/search)
-9: 
+
+6 instances:
+992 seconds taken
+Total of 17 mapreduce jobs, 14 of them were search jobs, 7 searches (origins).
+Used 6 reducers for each.
+
+9 instances: 
+
+12 instances:
 
 2. For the Hollywood dataset, at what distance are the 50th, 90th, and 95 percentiles?
 
+Output for 6 instances:
+0	7
+1	4019
+2	280171
+3	2564887
+4	3069117
+5	523149
+6	103679
+7	24985
+8	6160
+9	1677
+10	388
+11	71
+12	27
+
 3. What was the median processing rate (MB/s) for 6, 9, and 12 instances? You can approximate the data size to be (input size) * (# of searches).
+
+6 instances: (not sure what question is asking or how to compute)
+loadgraph finished in 74 sec., S3N_BYTES_READ=2,788,429,802
+
+2788429802*7/992 bytes/sec = 18.8 MB/sec 
 
 4. What was the speedup for 9 and 12 instances relative to 6 instances? What do you conclude about how well Hadoop parallelizes your work? Is this a case of strong scaling or weak scaling? Why or why not?
 
@@ -14,5 +41,9 @@
 
 7. How many dollars in EC2 credits did you use to complete this project? If ec2-usage returns bogus values, please try to approximate (and indicate this).
 
-8. Extra: What did you think of this project? This is the first time it has been offered, but hopefully not the last. What did you like, not like, or think we should change?
+8. Extra Credit: Compare the performance of your code to the reference. Compute the same results as problems 1, 3, and 4 above with the reference code. How much faster or slower is your implementation relative to the reference?
+
+6 instances: 992 seconds (ours) vs. 2100 seconds (reference)
+
+9. Optional: What did you think of this project? This is the first time it has been offered, but hopefully not the last. What did you like, not like, or think we should change?
 
