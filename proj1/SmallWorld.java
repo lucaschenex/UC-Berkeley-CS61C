@@ -42,20 +42,11 @@ public class SmallWorld {
 	/** Maximum depth for any breadth-first search. */
 	public static final int MAX_ITERATIONS = 20;
 
-        /** The number of clusters to use in Load, Search, and Clean Reduce steps.
-         *  Should equal the number of clusters used. */
-        public static final int REDUCERS = 6;
-
-        /** True if on EC2. */
-        public static final boolean onEC2 = false;
-
 	/** Shares denom cmd-line arg across cluster. */
 	public static final String DENOM_PATH = "denom.txt";
 
 	/** Enums used for Hadoop counters. */
 	public static enum GraphCounter {
-		/** Count number of starting points. */
-		ORIGINS,
 		/** Count number of distances found. */
 		DISTANCES_FOUND;
 	}
@@ -72,6 +63,7 @@ public class SmallWorld {
 			return CLASSES;
 		}
 
+		/** Classes EValue wraps. */
 		private static final Class[] CLASSES = {DistanceValue.class, DestinationsValue.class};
 	}
 
@@ -129,8 +121,6 @@ public class SmallWorld {
 	/** Stores destinations information. */
 	public static class DestinationsValue implements Writable {
 
-		/** Number of destinations. */
-		private int nDestinations;
 		/** Holds destination vertices. */
 		private long[] destinations;
 
@@ -140,13 +130,12 @@ public class SmallWorld {
 
 		/** DestinationIds list destinations for the key. */
 		public DestinationsValue(long[] destinationIds) {
-			this.nDestinations = destinationIds.length;
 			this.destinations = destinationIds;
 		}
 
 		/** Serializes object - needed for Writable. */
 		public void write(DataOutput out) throws IOException {
-			out.writeInt(nDestinations);
+			out.writeInt(destinations.length);
 			for (long destination : destinations) {
 				out.writeLong(destination);
 			}
@@ -154,7 +143,7 @@ public class SmallWorld {
 
 		/** Deserializes object - needed for Writable. */
 		public void readFields(DataInput in) throws IOException {
-			nDestinations = in.readInt();
+			int nDestinations = in.readInt();
 			destinations = new long[nDestinations];
 			for (int i = 0; i < nDestinations; i++) {
 				destinations[i] = in.readLong();
@@ -189,7 +178,7 @@ public class SmallWorld {
 		public long denom;
 
 		/*
-		 * Setup is called automatically once per map task. This will read denom
+		 * Setup is called automatically once per reduce task. This will read denom
 		 * in from the DistributedCache, and it will be available to each call
 		 * of map later on via the instance variable.
 		 */
@@ -224,7 +213,6 @@ public class SmallWorld {
 
 			// Randomly select this key as a starting vertex: 0 distance indicates start.
 			if (Math.random() < 1.0 / denom) {
-				context.getCounter(GraphCounter.ORIGINS).increment(1);
 				outWrapper.set(new DistanceValue(0, key.get(), true));
 				context.write(key, outWrapper);
 			}
@@ -275,7 +263,7 @@ public class SmallWorld {
 	/** Propagation of breadth-first search. */
 	public static class SearchReduce extends
 			Reducer<LongWritable, EValue, LongWritable, EValue> {
-		
+
 		/*
 		 * Updates distances by adding one to the appropriate distance of each
 		 * successor. (If a distance already has been propagated,
@@ -363,12 +351,10 @@ public class SmallWorld {
 				}
 			}
 
-			// Emit destinations if not all distances have been found
-			if (distances.size() < context.getCounter(GraphCounter.ORIGINS).getValue()) {
-				context.getCounter(GraphCounter.DISTANCES_FOUND).increment(distances.size());
-				outWrapper.set(new DestinationsValue(destinations));
-				context.write(key, outWrapper);
-			}
+			// Emit destinations
+			context.getCounter(GraphCounter.DISTANCES_FOUND).increment(distances.size());
+			outWrapper.set(new DestinationsValue(destinations));
+			context.write(key, outWrapper);
 		}
 	}
 
@@ -442,12 +428,6 @@ public class SmallWorld {
 		// measure time taken
 		long startTime = System.currentTimeMillis();
 
-		// Uses hdfs if on EC2
-		String path = "";
-		if (onEC2) {
-		    path += "hdfs:///";
-		}
-
 		GenericOptionsParser parser = new GenericOptionsParser(rawArgs);
 		Configuration conf = parser.getConfiguration();
 		String[] args = parser.getRemainingArgs();
@@ -458,8 +438,6 @@ public class SmallWorld {
 		// Setting up mapreduce job to load in graph
 		Job job = new Job(conf, "load graph");
 		job.setJarByClass(SmallWorld.class);
-
-		//job.setNumReduceTasks(REDUCERS);
 
 		job.setMapOutputKeyClass(LongWritable.class);
 		job.setMapOutputValueClass(LongWritable.class);
@@ -474,13 +452,10 @@ public class SmallWorld {
 
 		// Input from command-line argument, output to predictable place
 		FileInputFormat.addInputPath(job, new Path(args[0]));
-		FileOutputFormat.setOutputPath(job, new Path(path + "sw-out/bfs-0-out"));
+		FileOutputFormat.setOutputPath(job, new Path("sw-out/bfs-0-out"));
 
 		// Actually starts job, and waits for it to finish
 		job.waitForCompletion(true);
-
-		// Get number of origins found
-		long origins = job.getCounters().findCounter(GraphCounter.ORIGINS).getValue();
 
 		// Repeats your BFS mapreduce
 		int i = 0;
@@ -488,8 +463,6 @@ public class SmallWorld {
 		while (i < MAX_ITERATIONS) {
 			job = new Job(conf, "bfs" + i);
 			job.setJarByClass(SmallWorld.class);
-
-			//job.setNumReduceTasks(REDUCERS);
 
 			job.setMapOutputKeyClass(LongWritable.class);
 			job.setMapOutputValueClass(EValue.class);
@@ -503,12 +476,10 @@ public class SmallWorld {
 			job.setOutputFormatClass(SequenceFileOutputFormat.class);
 
 			// Notice how each mapreduce job gets gets its own output dir
-			FileInputFormat.addInputPath(job, new Path(path + "sw-out/bfs-" + i + "-out"));
-			FileOutputFormat.setOutputPath(job, new Path(path + "sw-out/bfs-" + (i + 1)
+			FileInputFormat.addInputPath(job, new Path("sw-out/bfs-" + i + "-out"));
+			FileOutputFormat.setOutputPath(job, new Path("sw-out/bfs-" + (i + 1)
 					+ "-out"));
 
-			// Set the value of origins counter
-			job.getCounters().findCounter(GraphCounter.ORIGINS).increment(origins);
 			job.waitForCompletion(true);
 			i++;
 			long distancesFound =
@@ -524,8 +495,6 @@ public class SmallWorld {
 		job = new Job(conf, "cleanup");
 		job.setJarByClass(SmallWorld.class);
 
-         	//job.setNumReduceTasks(REDUCERS);
-
 		job.setMapOutputKeyClass(LongWritable.class);
 		job.setMapOutputValueClass(DistanceValue.class);
 		job.setOutputKeyClass(LongWritable.class);
@@ -537,9 +506,9 @@ public class SmallWorld {
 		job.setInputFormatClass(SequenceFileInputFormat.class);
 		job.setOutputFormatClass(SequenceFileOutputFormat.class);
 
-		FileInputFormat.addInputPath(job, new Path(path + "sw-out/bfs-" + i + "-out"));
+		FileInputFormat.addInputPath(job, new Path("sw-out/bfs-" + i + "-out"));
 		FileOutputFormat
-				.setOutputPath(job, new Path(path + "sw-out/bfs-" + (i + 1) + "-out"));
+				.setOutputPath(job, new Path("sw-out/bfs-" + (i + 1) + "-out"));
 
 		job.waitForCompletion(true);
 		i++;
@@ -561,13 +530,13 @@ public class SmallWorld {
 
 		// By declaring i above outside of loop conditions, can use it
 		// here to get last bfs output to be input to histogram
-		FileInputFormat.addInputPath(job, new Path(path + "sw-out/bfs-" + i + "-out"));
+		FileInputFormat.addInputPath(job, new Path("sw-out/bfs-" + i + "-out"));
 		FileOutputFormat.setOutputPath(job, new Path(args[1]));
 
+		job.setNumReduceTasks(1); //one reducer for the histogram
 		job.waitForCompletion(true);
 
 		System.out.printf("\n\n");
-		System.out.printf("%d origins selected\n\n", origins);
 		System.out.printf("%3.3fs elapsed\n", (System.currentTimeMillis() - startTime) / 1000.0);
 		System.out.printf("\n\n");
 	}
