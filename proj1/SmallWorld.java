@@ -52,9 +52,6 @@ public class SmallWorld {
 	/** Shares denom cmd-line arg across cluster. */
 	public static final String DENOM_PATH = "denom.txt";
 
-	/** The number of starting points. */
-	public static long _origins = 0;
-
 	/** Enums used for Hadoop counters. */
 	public static enum GraphCounter {
 		/** Count number of starting points. */
@@ -278,7 +275,7 @@ public class SmallWorld {
 	/** Propagation of breadth-first search. */
 	public static class SearchReduce extends
 			Reducer<LongWritable, EValue, LongWritable, EValue> {
-
+		
 		/*
 		 * Updates distances by adding one to the appropriate distance of each
 		 * successor. (If a distance already has been propagated,
@@ -367,7 +364,7 @@ public class SmallWorld {
 			}
 
 			// Emit destinations if not all distances have been found
-			if (distances.size() < _origins) {
+			if (distances.size() < context.getCounter(GraphCounter.ORIGINS).getValue()) {
 				context.getCounter(GraphCounter.DISTANCES_FOUND).increment(distances.size());
 				outWrapper.set(new DestinationsValue(destinations));
 				context.write(key, outWrapper);
@@ -482,8 +479,8 @@ public class SmallWorld {
 		// Actually starts job, and waits for it to finish
 		job.waitForCompletion(true);
 
-		// Loads number of origins
-		_origins = job.getCounters().findCounter(GraphCounter.ORIGINS).getValue();
+		// Get number of origins found
+		long origins = job.getCounters().findCounter(GraphCounter.ORIGINS).getValue();
 
 		// Repeats your BFS mapreduce
 		int i = 0;
@@ -510,6 +507,8 @@ public class SmallWorld {
 			FileOutputFormat.setOutputPath(job, new Path(path + "sw-out/bfs-" + (i + 1)
 					+ "-out"));
 
+			// Set the value of origins counter
+			job.getCounters().findCounter(GraphCounter.ORIGINS).increment(origins);
 			job.waitForCompletion(true);
 			i++;
 			long distancesFound =
@@ -568,7 +567,7 @@ public class SmallWorld {
 		job.waitForCompletion(true);
 
 		System.out.printf("\n\n");
-		System.out.printf("%d origins selected\n\n", _origins);
+		System.out.printf("%d origins selected\n\n", origins);
 		System.out.printf("%3.3fs elapsed\n", (System.currentTimeMillis() - startTime) / 1000.0);
 		System.out.printf("\n\n");
 	}
