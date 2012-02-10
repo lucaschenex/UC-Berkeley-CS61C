@@ -8,33 +8,26 @@
   Login: cs61c-mm
  */
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.DataInput;
 import java.io.DataOutput;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.lang.Math;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.filecache.DistributedCache;
-import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.GenericWritable;
-import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
-import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
-import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
+import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.apache.hadoop.util.GenericOptionsParser;
 
 public class SmallWorld {
@@ -42,13 +35,15 @@ public class SmallWorld {
 	/** Maximum depth for any breadth-first search. */
 	public static final int MAX_ITERATIONS = 20;
 
-	/** Shares denom cmd-line arg across cluster. */
-	public static final String DENOM_PATH = "denom.txt";
+	/** String used as key for the denominator property in the job configuration. */
+	public static final String DENOM_PROPERTY = "denom";
 
 	/** Enums used for Hadoop counters. */
 	public static enum GraphCounter {
 		/** Count number of distances found. */
-		DISTANCES_FOUND;
+		DISTANCES_FOUND,
+		/** Count number of starting points. */
+		ORIGINS;
 	}
 
 	/** Wrapper for DistanceValue and DestinationsValue. */
@@ -64,7 +59,8 @@ public class SmallWorld {
 		}
 
 		/** Classes EValue wraps. */
-		private static final Class[] CLASSES = {DistanceValue.class, DestinationsValue.class};
+		private static final Class[] CLASSES =
+			{DistanceValue.class, DestinationsValue.class};
 	}
 
 	/** Stores distance information. */
@@ -177,27 +173,10 @@ public class SmallWorld {
 		/** Denominator for probability. */
 		public long denom;
 
-		/*
-		 * Setup is called automatically once per reduce task. This will read denom
-		 * in from the DistributedCache, and it will be available to each call
-		 * of map later on via the instance variable.
-		 */
+		/** Read the denom argument from the configuration. */
 		@Override
 		public void setup(Context context) {
-			try {
-				Configuration conf = context.getConfiguration();
-				Path cachedDenomPath = DistributedCache
-						.getLocalCacheFiles(conf)[0];
-				BufferedReader reader = new BufferedReader(new FileReader(
-						cachedDenomPath.toString()));
-				String denomStr = reader.readLine();
-				reader.close();
-				denom = Long.decode(denomStr);
-			} catch (IOException ioe) {
-				System.err
-						.println("IOException reading denom from distributed cache");
-				System.err.println(ioe.toString());
-			}
+			denom = context.getConfiguration().getLong(DENOM_PROPERTY, Long.MAX_VALUE);
 		}
 
 		/**
@@ -213,6 +192,7 @@ public class SmallWorld {
 
 			// Randomly select this key as a starting vertex: 0 distance indicates start.
 			if (Math.random() < 1.0 / denom) {
+				context.getCounter(GraphCounter.ORIGINS).increment(1);
 				outWrapper.set(new DistanceValue(0, key.get(), true));
 				context.write(key, outWrapper);
 			}
@@ -231,25 +211,6 @@ public class SmallWorld {
 		}
 	}
 
-	/** Shares denom argument across the cluster via DistributedCache. */
-	public static void shareDenom(String denomStr, Configuration conf) {
-		try {
-			Path localDenomPath = new Path(DENOM_PATH + "-source");
-			Path remoteDenomPath = new Path(DENOM_PATH);
-			BufferedWriter writer = new BufferedWriter(new FileWriter(
-					localDenomPath.toString()));
-			writer.write(denomStr);
-			writer.newLine();
-			writer.close();
-			FileSystem fs = FileSystem.get(conf);
-			fs.copyFromLocalFile(true, true, localDenomPath, remoteDenomPath);
-			DistributedCache.addCacheFile(remoteDenomPath.toUri(), conf);
-		} catch (IOException ioe) {
-			System.err.println("IOException writing to distributed cache");
-			System.err.println(ioe.toString());
-		}
-	}
-
 	/** Identity map. */
 	public static class SearchMap extends
 			Mapper<LongWritable, EValue, LongWritable, EValue> {
@@ -264,7 +225,17 @@ public class SmallWorld {
 	public static class SearchReduce extends
 			Reducer<LongWritable, EValue, LongWritable, EValue> {
 
-		/*
+		/** Total number of starting vertices. */
+		private long _origins;
+
+		/** Read the origins argument from the configuration. */
+		@Override
+		public void setup(Context context) {
+			_origins = context.getConfiguration().getLong(GraphCounter.ORIGINS.name(),
+					Long.MAX_VALUE);
+		}
+
+		/**
 		 * Updates distances by adding one to the appropriate distance of each
 		 * successor. (If a distance already has been propagated,
 		 * we can skip this step) For example:
@@ -281,13 +252,14 @@ public class SmallWorld {
 		@Override
 		public void reduce(LongWritable key, Iterable<EValue> values,
 				Context context) throws IOException, InterruptedException {
-			//Wraps output
+			/* Wraps output for writing. */
 			EValue outWrapper = new EValue();
-			// keeps track of all successors for this vertex (key)
+			/* Keeps track of all successors for this vertex (key) */
 			long[] destinations = null;
-			// distances maps from ea. origin to distance(key, origin)
+			/* Maps ea. origin id to distance(key, origin) */
 			HashMap<Long, Integer> distances = new HashMap<Long, Integer>();
-			// Origins that still need to have distance propagated to successors.
+			/* Maps ea. origin id to a boolean that indicates if it
+			still needs to have distance propagated to successors. */
 			HashMap<Long, Boolean> needToPropagate = new HashMap<Long, Boolean>();
 
 			/* Calculate min. distances, remember destinations, and note which distances
@@ -351,10 +323,14 @@ public class SmallWorld {
 				}
 			}
 
-			// Emit destinations
+			// Update number of distances found
 			context.getCounter(GraphCounter.DISTANCES_FOUND).increment(distances.size());
-			outWrapper.set(new DestinationsValue(destinations));
-			context.write(key, outWrapper);
+
+			// Emit destinations iff not all distances have been found
+			if (distances.size() < _origins) {
+				outWrapper.set(new DestinationsValue(destinations));
+				context.write(key, outWrapper);
+			}
 		}
 	}
 
@@ -424,6 +400,7 @@ public class SmallWorld {
 		}
 	}
 
+	/** Runs the mapreduce jobs. */
 	public static void main(String[] rawArgs) throws Exception {
 		// measure time taken
 		long startTime = System.currentTimeMillis();
@@ -431,9 +408,9 @@ public class SmallWorld {
 		GenericOptionsParser parser = new GenericOptionsParser(rawArgs);
 		Configuration conf = parser.getConfiguration();
 		String[] args = parser.getRemainingArgs();
-
+		
 		// Set denom from command line arguments
-		shareDenom(args[2], conf);
+		conf.setLong(DENOM_PROPERTY, Long.parseLong(args[2]));
 
 		// Setting up mapreduce job to load in graph
 		Job job = new Job(conf, "load graph");
@@ -457,7 +434,11 @@ public class SmallWorld {
 		// Actually starts job, and waits for it to finish
 		job.waitForCompletion(true);
 
-		// Repeats your BFS mapreduce
+		// Set the number of origins as a property in the configuration
+		conf.setLong(GraphCounter.ORIGINS.name(),
+				job.getCounters().findCounter(GraphCounter.ORIGINS).getValue());
+
+		// Iteratively do BFS mapreduce
 		int i = 0;
 		long prevDistancesFound = -1;
 		while (i < MAX_ITERATIONS) {
