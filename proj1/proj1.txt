@@ -1,9 +1,15 @@
 1. Run your code on hollywood.sequ with denom=100000 on clusters of size 6, 9, and 12. How long does each take? How many searches did each perform? How many reducers did you use for each? (Read the rest of the questions to see what other data you will need)
 
 6 instances:
+(Run 1)
 992 seconds taken
-Total of 17 mapreduce jobs, 14 of them were search jobs, 7 searches (origins).
+Total of 17 mapreduce jobs, 7 searches (origins).
 Used 6 reducers for each.
+
+(Run 2)
+1102 seconds taken
+Total of 17 mapreduce jobs, 13 searches (origins).
+Used 12 reducers for each.
 
 9 instances: 
 
@@ -12,6 +18,7 @@ Used 6 reducers for each.
 2. For the Hollywood dataset, at what distance are the 50th, 90th, and 95 percentiles?
 
 Output for 6 instances:
+(Run 1)
 0	7
 1	4019
 2	280171
@@ -26,12 +33,32 @@ Output for 6 instances:
 11	71
 12	27
 
+(Run 2)
+0	13
+1	304
+2	52721
+3	2619177
+4	7237102
+5	1848553
+6	329846
+7	75598
+8	18895
+9	4753
+10	1149
+11	430
+12	84
+13	4
+
 3. What was the median processing rate (MB/s) for 6, 9, and 12 instances? You can approximate the data size to be (input size) * (# of searches).
 
-6 instances: (not sure what question is asking or how to compute)
+6 instances:
+(Run 1)
 loadgraph finished in 74 sec., S3N_BYTES_READ=2,788,429,802
-
 2788429802*7/992 bytes/sec = 18.8 MB/sec 
+
+(Run 2)
+S3N_BYTES_READ=2,788,427,125
+2788429802*13/1102 bytes/sec = 31.4 MB/sec
 
 4. What was the speedup for 9 and 12 instances relative to 6 instances? What do you conclude about how well Hadoop parallelizes your work? Is this a case of strong scaling or weak scaling? Why or why not?
 
@@ -43,7 +70,18 @@ loadgraph finished in 74 sec., S3N_BYTES_READ=2,788,429,802
 
 8. Extra Credit: Compare the performance of your code to the reference. Compute the same results as problems 1, 3, and 4 above with the reference code. How much faster or slower is your implementation relative to the reference?
 
-6 instances: 992 seconds (ours) vs. 2100 seconds (reference)
+6 instances:
+(Run 1)
+992 seconds (ours -- 7 starting vertices, 6 reducers)
+vs. 2100 seconds (reference -- 7 starting vertices, 6 reducers)
+
+(Run 2)
+1102 seconds (ours -- 13 starting vertices, 12 reducers)
+vs. 2901 seconds (reference -- 11 starting vertices, reducers)
+
+9 instances:
+
+12 instances:
 
 9. Optional: What did you think of this project? This is the first time it has been offered, but hopefully not the last. What did you like, not like, or think we should change?
 
