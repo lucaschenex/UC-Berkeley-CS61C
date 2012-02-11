@@ -313,44 +313,22 @@ public class SmallWorld {
 		}
 	}
 
-	/** Just keep distance information. */
-	public static class CleanupMap extends
-			Mapper<LongWritable, EValue, LongWritable, DistanceValue> {
+	/** The map outputs (distance, 1) for each DistanceValue. We don't actually have
+	 *  to take the minimum distance between each vertex and origin because the
+	 *  BFS search breaks when there are no more distances found. */
+	public static class HistogramMap extends
+			Mapper<LongWritable, EValue, LongWritable, LongWritable> {
+
+		/** Avoid having to create an object over and over. */
+		public static LongWritable ONE = new LongWritable(1L);
+
 		@Override
 		public void map(LongWritable key, EValue value, Context context)
 				throws IOException, InterruptedException {
 			Writable unwrapped = value.get();
 			if (unwrapped instanceof DistanceValue) {
-				context.write(key, (DistanceValue) unwrapped);
-			}
-		}
-	}
-
-	/** Output (distance, 1) for each origin of each key. */
-	public static class CleanupReduce extends
-			Reducer<LongWritable, DistanceValue, LongWritable, LongWritable> {
-
-		public static LongWritable ONE = new LongWritable(1L);
-
-		@Override
-		public void reduce(LongWritable key, Iterable<DistanceValue> values,
-				Context context) throws IOException, InterruptedException {
-			// distances maps from ea. origin to distance(key, origin)
-			HashMap<Long, Integer> distances = new HashMap<Long, Integer>();
-			for (DistanceValue dVal : values) {
-				// take minimum distance ea. time
-				long origin = dVal.getOrigin();
-				int distance = dVal.getDistance();
-				if (distances.containsKey(origin)) {
-					if (distances.get(origin) > distance) {
-						distances.put(origin, distance);
-					}
-				} else {
-					distances.put(origin, distance);
-				}
-			}
-			for (Integer distance : distances.values()) {
-				context.write(new LongWritable(distance), ONE);
+				DistanceValue dVal = (DistanceValue) unwrapped;
+				context.write(new LongWritable(dVal.getDistance()), ONE);
 			}
 		}
 	}
@@ -441,28 +419,6 @@ public class SmallWorld {
 			}
 		}
 
-		// Cleanup
-		job = new Job(conf, "cleanup");
-		job.setJarByClass(SmallWorld.class);
-
-		job.setMapOutputKeyClass(LongWritable.class);
-		job.setMapOutputValueClass(DistanceValue.class);
-		job.setOutputKeyClass(LongWritable.class);
-		job.setOutputValueClass(LongWritable.class);
-
-		job.setMapperClass(CleanupMap.class);
-		job.setReducerClass(CleanupReduce.class);
-
-		job.setInputFormatClass(SequenceFileInputFormat.class);
-		job.setOutputFormatClass(SequenceFileOutputFormat.class);
-
-		FileInputFormat.addInputPath(job, new Path("sw-out/bfs-" + i + "-out"));
-		FileOutputFormat
-				.setOutputPath(job, new Path("sw-out/bfs-" + (i + 1) + "-out"));
-
-		job.waitForCompletion(true);
-		i++;
-
 		// Mapreduce config for histogram computation
 		job = new Job(conf, "hist");
 		job.setJarByClass(SmallWorld.class);
@@ -472,7 +428,7 @@ public class SmallWorld {
 		job.setOutputKeyClass(LongWritable.class);
 		job.setOutputValueClass(LongWritable.class);
 
-		job.setMapperClass(Mapper.class); // identity map
+		job.setMapperClass(HistogramMap.class);
 		job.setCombinerClass(HistogramReduce.class);
 		job.setReducerClass(HistogramReduce.class);
 
