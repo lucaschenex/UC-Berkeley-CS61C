@@ -152,17 +152,6 @@ public class SmallWorld {
 		}
 	}
 
-	/** Identity Map. */
-	public static class LoaderMap extends
-			Mapper<LongWritable, LongWritable, LongWritable, LongWritable> {
-
-		@Override
-		public void map(LongWritable key, LongWritable value, Context context)
-				throws IOException, InterruptedException {
-			context.write(key, value);
-		}
-	}
-
 	/**
 	 * Selects vertices as starting points with probability 1/denom. Those
 	 * get marked with distance 0.
@@ -211,16 +200,6 @@ public class SmallWorld {
 		}
 	}
 
-	/** Identity map. */
-	public static class SearchMap extends
-			Mapper<LongWritable, EValue, LongWritable, EValue> {
-		@Override
-		public void map(LongWritable key, EValue value, Context context)
-				throws IOException, InterruptedException {
-			context.write(key, value);
-		}
-	}
-
 	/** Propagation of breadth-first search. */
 	public static class SearchReduce extends
 			Reducer<LongWritable, EValue, LongWritable, EValue> {
@@ -231,8 +210,8 @@ public class SmallWorld {
 		/** Read the origins argument from the configuration. */
 		@Override
 		public void setup(Context context) {
-			_origins = context.getConfiguration().getLong(GraphCounter.ORIGINS.name(),
-					Long.MAX_VALUE);
+			_origins = context.getConfiguration().
+				getLong(GraphCounter.ORIGINS.name(),Long.MAX_VALUE);
 		}
 
 		/**
@@ -376,16 +355,6 @@ public class SmallWorld {
 		}
 	}
 
-	/** Identity map. */
-	public static class HistogramMap extends
-			Mapper<LongWritable, LongWritable, LongWritable, LongWritable> {
-		@Override
-		public void map(LongWritable key, LongWritable value, Context context)
-				throws IOException, InterruptedException {
-			context.write(key, value);
-		}
-	}
-
 	/** Total counts for ea. distance value. */
 	public static class HistogramReduce extends
 			Reducer<LongWritable, LongWritable, LongWritable, LongWritable> {
@@ -394,7 +363,7 @@ public class SmallWorld {
 				Context context) throws IOException, InterruptedException {
 			long sum = 0L;
 			for (LongWritable val : values) {
-				sum += 1L;
+				sum += val.get();
 			}
 			context.write(key, new LongWritable(sum));
 		}
@@ -421,7 +390,7 @@ public class SmallWorld {
 		job.setOutputKeyClass(LongWritable.class);
 		job.setOutputValueClass(EValue.class);
 
-		job.setMapperClass(LoaderMap.class);
+		job.setMapperClass(Mapper.class); // identity map
 		job.setReducerClass(LoadReduce.class);
 
 		job.setInputFormatClass(SequenceFileInputFormat.class);
@@ -450,7 +419,7 @@ public class SmallWorld {
 			job.setOutputKeyClass(LongWritable.class);
 			job.setOutputValueClass(EValue.class);
 
-			job.setMapperClass(SearchMap.class);
+			job.setMapperClass(Mapper.class); // identity map
 			job.setReducerClass(SearchReduce.class);
 
 			job.setInputFormatClass(SequenceFileInputFormat.class);
@@ -503,7 +472,8 @@ public class SmallWorld {
 		job.setOutputKeyClass(LongWritable.class);
 		job.setOutputValueClass(LongWritable.class);
 
-		job.setMapperClass(HistogramMap.class);
+		job.setMapperClass(Mapper.class); // identity map
+		job.setCombinerClass(HistogramReduce.class);
 		job.setReducerClass(HistogramReduce.class);
 
 		job.setInputFormatClass(SequenceFileInputFormat.class);
