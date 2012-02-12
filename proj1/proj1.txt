@@ -152,7 +152,6 @@ Output for 12 instances:
 
 6 instances:
 (Run 1)
-loadgraph finished in 74 sec.
 S3N_BYTES_READ=2,788,429,802
 2788429802*7/992 bytes/sec = 19.68 MB/sec 
 
@@ -180,7 +179,7 @@ S3N_BYTES_READ=2,788,429,051
 
 4. What was the speedup for 9 and 12 instances relative to 6 instances? What do you conclude about how well Hadoop parallelizes your work? Is this a case of strong scaling or weak scaling? Why or why not?
 
-From this small data set, hadoop seems to scale time logarithmically withthe number of nodes. Increasing from 6 to 9 yielded greater improvements than increasing from 9 to 12 nodes. This is an example of strong scaling because time decreased by increasing the amount of nodes while keeping the input size constant.
+From this small data set, hadoop seems to scale time logarithmically with the number of nodes. Increasing from 6 to 9 yielded greater improvements than increasing from 9 to 12 nodes. This is an example of strong scaling because time decreased by increasing the amount of nodes while keeping the input size constant.
 
 9 instances:
   Run 1: 43% improvement over 6 instances
@@ -190,12 +189,15 @@ From this small data set, hadoop seems to scale time logarithmically withthe num
   Run 1: 53% improvement over 6 instances,
          9.8% improvement over 9 instances
   Run 2: 20% improvement over 6 instances,
-         6.5 improvement over 6 instances
+         6.5% improvement over 6 instances
 
 
 5. What is the purpose of including the combiner in the histogram skeleton code? Does its inclusion affect performance much? Why or why not? Could you have used a combiner in your other mapreduces? Why or why not?
 
-The combiner ensures that the final reduce step in histogram has all parts of the graph. Using the combiner removes parallelization, slowing the process significantly. It can be used for other steps, although it is not necessary and would defeat the purpose of using multiple nodes.
+The combiner aggregates the output of each node's mapper (by calculating partial distance counts) before the writing and shuffling steps.
+I compared the time taken using a combiner and the time taken without using a combiner, and the difference was small.
+If the dataset were larger, the time savings from reduced disk I/O and bandwidth use may have been more pronounced. 
+A combiner could have been used for other steps; for instance, it could have handled some of the distance calculations for each vertex in the graph.
 
 6. What was the price per GB processed for each cluster size? (Recall that an extra-large instance costs $0.68 per hour, rounded up to the nearest hour.)
 
@@ -261,3 +263,4 @@ vs. 1358 (reference -- 7 starting vertices, 12 reducers)
 9. Optional: What did you think of this project? This is the first time it has been offered, but hopefully not the last. What did you like, not like, or think we should change?
 
 Great project for padding a resume and for interview discussion.
+
