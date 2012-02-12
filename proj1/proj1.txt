@@ -1,21 +1,51 @@
+/*
+  CS 61C Project1: Small World
+
+  Name: Hairan Zhu
+  Login: cs61c-eu
+
+  Name: Benjamin Han
+  Login: cs61c-mm
+ */
+
 1. Run your code on hollywood.sequ with denom=100000 on clusters of size 6, 9, and 12. How long does each take? How many searches did each perform? How many reducers did you use for each? (Read the rest of the questions to see what other data you will need)
 
 6 instances:
 (Run 1)
 992 seconds taken
-Total of 17 mapreduce jobs, 7 searches (origins).
+Total of 17 mapreduce jobs, 7 searches
 Used 6 reducers for each.
 
 (Run 2)
 1102 seconds taken
-Total of 17 mapreduce jobs, 13 searches (origins).
+Total of 17 mapreduce jobs, 13 searches
 Used 12 reducers for each.
 
 9 instances: 
+(Run 1)
+1086 seconds taken
+Total of 17 mapreduce jobs, 11 searches
+Used 6 reducers for each.
+
+(Run 2)
+980 seconds taken
+Total of 17 mapreduce jobs, 12 searches
+Used 12 reducers for each.
 
 12 instances:
+(Run 1)
+1017 seconds taken
+Total of 17 mapreduce jobs, 11 searches
+Used 6 reducers for each.
+
+(Run 2)
+916 seconds taken
+Total of 17 mapreduce jobs, 13 searches
+Used 12 reducers for each.
 
 2. For the Hollywood dataset, at what distance are the 50th, 90th, and 95 percentiles?
+
+On average, the 50th percentile is 4 and the 90th and 95th percentile both lie on 5.
 
 Output for 6 instances:
 (Run 1)
@@ -49,24 +79,143 @@ Output for 6 instances:
 12	84
 13	4
 
+Output for 9 instances:
+(Run 1)
+0	11
+1	465
+2	72871
+3	1554069
+4	4491403
+5	1897989
+6	317164
+7	70102
+8	18503
+9	4689
+10	1200
+11	295
+12	69
+13	21
+14	8
+
+(Run 2)
+0	12
+1	698
+2	142336
+3	3559312
+4	6097243
+5	1147064
+6	231503
+7	54619
+8	13614
+9	3664
+10	826
+11	257
+12	84
+13	43
+14	6
+
+Output for 12 instances:
+(Run 1)
+0	11
+1	682
+2	129062
+3	3146031
+4	5756119
+5	1021388
+6	199568
+7	48133
+8	11965
+9	2952
+10	763
+11	174
+12	51
+13	4
+
+(Run 2)
+0	13
+1	943
+2	197207
+3	4164304
+4	6188048
+5	1299512
+6	249393
+7	58149
+8	14418
+9	3354
+10	1052
+11	228
+12	43
+13	25
+
+
 3. What was the median processing rate (MB/s) for 6, 9, and 12 instances? You can approximate the data size to be (input size) * (# of searches).
 
 6 instances:
 (Run 1)
-loadgraph finished in 74 sec., S3N_BYTES_READ=2,788,429,802
-2788429802*7/992 bytes/sec = 18.8 MB/sec 
+loadgraph finished in 74 sec.
+S3N_BYTES_READ=2,788,429,802
+2788429802*7/992 bytes/sec = 19.68 MB/sec 
 
 (Run 2)
 S3N_BYTES_READ=2,788,427,125
-2788429802*13/1102 bytes/sec = 31.4 MB/sec
+2788429802*13/1102 bytes/sec = 32.89 MB/sec
+
+9 instances:
+(Run 1)
+S3N_BYTES_READ=2,788,409,176
+2,788,409,176*11/1086 bytes/sec = 28.24 MB/sec
+
+(Run 2)
+S3N_BYTES_READ=2,788,430,835
+2,788,430,835*12/980 bytes/sec = 34.14 MB/sec
+
+12 instances:
+(Run 1)
+S3N_BYTES_READ=2,788,432,547
+2,788,430,835*12/980 bytes/sec = 30.16 MB/sec
+
+(Run 2)
+S3N_BYTES_READ=2,788,429,051
+2,788,429,051*13/916 bytes/sec = 39.57 MB/sec
 
 4. What was the speedup for 9 and 12 instances relative to 6 instances? What do you conclude about how well Hadoop parallelizes your work? Is this a case of strong scaling or weak scaling? Why or why not?
 
+From this small data set, hadoop seems to scale time logarithmically withthe number of nodes. Increasing from 6 to 9 yielded greater improvements than increasing from 9 to 12 nodes. This is an example of strong scaling because time decreased by increasing the amount of nodes while keeping the input size constant.
+
+9 instances:
+  Run 1: 43% improvement over 6 instances
+  Run 2: 3.8% improvement over 6 instances
+
+12 instances: 
+  Run 1: 53% improvement over 6 instances,
+         9.8% improvement over 9 instances
+  Run 2: 20% improvement over 6 instances,
+         6.5 improvement over 6 instances
+
+
 5. What is the purpose of including the combiner in the histogram skeleton code? Does its inclusion affect performance much? Why or why not? Could you have used a combiner in your other mapreduces? Why or why not?
+
+The combiner ensures that the final reduce step in histogram has all parts of the graph. Using the combiner removes parallelization, slowing the process significantly. It can be used for other steps, although it is not necessary and would defeat the purpose of using multiple nodes.
 
 6. What was the price per GB processed for each cluster size? (Recall that an extra-large instance costs $0.68 per hour, rounded up to the nearest hour.)
 
+6 instances:
+6 * $0.68/hr * 1 hr / 3 GB = $1.36 / GB
+
+9 instances:
+9 * $0.68/hr * 1 hr / 3 GB = $2.04 / GB
+
+12 instances:
+12 * $0.68/hr * 1 hr / 3 GB = $2.72 / GB
+
+
 7. How many dollars in EC2 credits did you use to complete this project? If ec2-usage returns bogus values, please try to approximate (and indicate this).
+
+ec2-usage:
+  total cost of running instances = $1968.60
+  total cost of finished instances = $43.520 
+
+(6 + 9 + 12 + 36 [debugging]) hrs @ $0.68 = $42.84
 
 8. Extra Credit: Compare the performance of your code to the reference. Compute the same results as problems 1, 3, and 4 above with the reference code. How much faster or slower is your implementation relative to the reference?
 
@@ -75,13 +224,40 @@ S3N_BYTES_READ=2,788,427,125
 992 seconds (ours -- 7 starting vertices, 6 reducers)
 vs. 2100 seconds (reference -- 7 starting vertices, 6 reducers)
 
+2.1x faster
+
 (Run 2)
 1102 seconds (ours -- 13 starting vertices, 12 reducers)
-vs. 2901 seconds (reference -- 11 starting vertices, reducers)
+vs. 2901 seconds (reference -- 11 starting vertices, 12 reducers)
+
+2.6x faster
 
 9 instances:
+(Run 1)
+1086 seconds (ours -- 11 starting vertices, 6 reducers)
+vs. 3819 (reference -- 11 starting vertices, 15 reducers)
+
+2.9x faster
+
+(Run 2)
+980 seconds (ours -- 12 starting vertices, 12 reducers)
+vs. 2894 (reference -- 13 starting vertices, 12 reducers)
+
+3.0x faster
 
 12 instances:
+(Run 1)
+1017 seconds (ours -- 12 starting vetices, 6 reducers)
+vs. 2774 (reference --15 starting vertices, 6 reducers)
+
+2.7x faster
+
+(Run 2)
+916 seconds (ours -- 13 starting vertices, 12 reducers)
+vs. 1358 (reference -- 7 starting vertices, 12 reducers)
+
+1.5x faster
 
 9. Optional: What did you think of this project? This is the first time it has been offered, but hopefully not the last. What did you like, not like, or think we should change?
 
+Great project for padding a resume and for interview discussion.
