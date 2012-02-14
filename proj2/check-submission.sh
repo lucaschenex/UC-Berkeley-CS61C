@@ -39,12 +39,12 @@ if [ "$1" == "part2" ]; then
     git checkout proj2-2 || error "You haven't tagged any commit proj2-2"
 	make runtest &&
 	    ok "You have submitted proj2-2 correctly." ||
-	    warning "Your tagged commit does not pass 'make runtest'."
+	    warning "Your tagged commit does not pass 'make runtest'. Either your code is not working, or you have tagged the wrong commit."
 else
     git checkout proj2-1 || error "You haven't tagged any commit proj2-1"
     make disasmtest &&
         ok "You have submitted proj2-1 correctly." ||
-        warning "Your tagged commit does not pass 'make disasmtest'."
+        warning "Your tagged commit does not pass 'make disasmtest'. Either your code is not working, or you have tagged the wrong commit."
 fi
 
 rm -rf "$TMP"
