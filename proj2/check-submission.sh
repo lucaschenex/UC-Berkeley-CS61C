@@ -1,15 +1,30 @@
 #!/bin/bash -e
+# Run me to check your submission for errors:
+#   $ ./check-submission.sh
+#
+# Currently only checks your part1 submission.
 
 LOGIN=$USER
 TMP=check_submission_tmp
 
+warning() {
+    echo -e "\e[01;31mWARNING: $@\e[00m"
+}
+
 error() {
     echo -e "\e[01;31mERROR: $@\e[00m"
+    echo -e "\e[00;31m"
+    echo -e "Read the above output to see what went wrong, and run 'git status' or 'gitk' to see what is going on.
+    
+If your git repository is seriously messed up, considering cloning a fresh copy from github via 'git clone <giturl>', where <giturl> is listed at your repository page at \e[00;33mhttps://github.com/ucberkeley-cs61c/$LOGIN\e[00;31m
+
+If you can't straighten things out, please stop by office hours or lab to talk to a TA. There are also many posts on Piazza about submitting via git and numerous other online resources."
+    echo -en "\e[00m"
     exit 1
 }
 
 ok() {
-    echo -e "\e[01;32mOK: $@\e[00m"
+    echo -e "\e[01;32mSUCCESS: $@\e[00m"
 }
 
 rm -rf "$TMP"
@@ -21,8 +36,8 @@ cd proj2 || error "You haven't pushed the proj2 directory to github."
 git checkout proj2-1 || error "You haven't tagged any commit proj2-1"
 
 make disasmtest &&
-    ok "Your proj2-1 submission looks fine to me." ||
-    error "Your tagged commit does not pass the sanity check for proj2-1"
+    ok "You have submitted proj2-1 correctly." ||
+    warning "Your tagged commit does not pass 'make disasmtest'."
 
 rm -rf "$TMP"
 
