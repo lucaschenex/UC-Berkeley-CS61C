@@ -1,8 +1,10 @@
 #!/bin/bash -e
-# Run me to check your submission for errors:
-#   $ ./check-submission.sh
 #
-# Currently only checks your part1 submission.
+# To check your submission you should run:
+#
+#   $ make check-part1
+#   $ make check-part2
+#
 
 LOGIN=$USER
 TMP=check_submission_tmp
@@ -33,11 +35,17 @@ git clone git@github.com:ucberkeley-cs61c/$LOGIN.git "$TMP" || error "Could not 
 cd "$TMP"
 cd proj2 || error "You haven't pushed the proj2 directory to github."
 
-git checkout proj2-1 || error "You haven't tagged any commit proj2-1"
-
-make disasmtest &&
-    ok "You have submitted proj2-1 correctly." ||
-    warning "Your tagged commit does not pass 'make disasmtest'."
+if [ "$1" == "part2" ]; then
+    git checkout proj2-2 || error "You haven't tagged any commit proj2-2"
+	make runtest &&
+	    ok "You have submitted proj2-2 correctly." ||
+	    warning "Your tagged commit does not pass 'make runtest'."
+else
+    git checkout proj2-1 || error "You haven't tagged any commit proj2-1"
+    make disasmtest &&
+        ok "You have submitted proj2-1 correctly." ||
+        warning "Your tagged commit does not pass 'make disasmtest'."
+fi
 
 rm -rf "$TMP"
 

@@ -33,5 +33,11 @@ runtest: mips-sim mipscode/insts
 	./mips-sim -r mipscode/insts > insts.trace
 	@diff insts.trace mipscode/insts.trace && echo "RUN TEST PASSED!" || echo "RUN TEST FAILED!"
 
+check-part1:
+	./check-submission.sh
+
+check-part2:
+	./check-submission.sh part2
+
 clean:
 	rm -f mips-sim $(addprefix mipscode/, $(C_TESTS) $(ASM_TESTS)) $(addsuffix .o, $(addprefix mipscode/, $(C_TESTS) $(ASM_TESTS))) *.dump *.trace
