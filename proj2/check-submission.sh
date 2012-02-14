@@ -21,9 +21,9 @@ error() {
     echo -e "\e[00;31m"
     echo -e "Read the above output to see what went wrong, and run 'git status' or 'gitk' to see what is going on.
     
-If your git repository is seriously messed up, considering cloning a fresh copy from github via 'git clone <giturl>', where <giturl> is listed at your repository page at \e[00;33mhttps://github.com/ucberkeley-cs61c/$LOGIN\e[00;31m
+If your git repository is seriously messed up, consider cloning a fresh copy from github via 'git clone <giturl>', where <giturl> is listed at your repository page at \e[00;33mhttps://github.com/ucberkeley-cs61c/$LOGIN\e[00;31m
 
-If you can't straighten things out, please stop by office hours or lab to talk to a TA. There are also many posts on Piazza about submitting via git and numerous other online resources."
+If stuck, please stop by office hours or lab to talk to a TA. There are also many posts on Piazza about submitting via git and numerous other online resources."
     echo -en "\e[00m"
     exit 1
 }
