@@ -38,16 +38,16 @@ cd "$TMP/proj2" || error "You haven't pushed the proj2 directory to github."
 
 if [ "$1" == "part2" ]; then
     git checkout proj2-2 || error "You haven't tagged any commit proj2-2"
-    cp disassemble.c "$REF/proj2/"
+    cp disassemble.c "$REF/proj2/" || error "Couldn't find file proj2/disassemble.c"
     cd "$REF/proj2/"
 	make runtest &&
 	    ok "You have submitted proj2-2 correctly." ||
 	    warning "Your tagged commit does not pass 'make runtest'. Either your code is not working, or you have tagged the wrong commit."
 else
     git checkout proj2-1 || error "You haven't tagged any commit proj2-1"
-    cp disassemble.c "$REF/proj2/"
-    cp processor.c "$REF/proj2/"
-    cp memory.c "$REF/proj2/"
+    cp disassemble.c "$REF/proj2/" || error "Couldn't find file proj2/disassemble.c"
+    cp processor.c "$REF/proj2/" || error "Couldn't find file proj2/processor.c"
+    cp memory.c "$REF/proj2/" || error "Couldn't find file proj2/memory.c"
     cd "$REF/proj2/"
     make disasmtest &&
         ok "You have submitted proj2-1 correctly." ||
