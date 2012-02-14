@@ -6,6 +6,8 @@
 #   $ make check-part2
 #
 
+hostname | grep -q hive || (echo -e "\e[01;31mYou must run this script on the hive machines.\e[00m" && exit 1)
+
 LOGIN=$USER
 TMP=`pwd`/.check_submission_tmp
 REF=`pwd`/.check_submission_ref
