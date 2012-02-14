@@ -7,7 +7,8 @@
 #
 
 LOGIN=$USER
-TMP=check_submission_tmp
+TMP=`pwd`/.check_submission_tmp
+REF=`pwd`/.check_submission_ref
 
 warning() {
     echo -e "\e[01;31mWARNING: $@\e[00m"
@@ -29,24 +30,30 @@ ok() {
     echo -e "\e[01;32mSUCCESS: $@\e[00m"
 }
 
-rm -rf "$TMP"
+rm -rf "$TMP" "$REF"
 git clone git@github.com:ucberkeley-cs61c/$LOGIN.git "$TMP" || error "Could not clone your git repo."
+git clone git://github.com/ucberkeley-cs61c/proj2.git "$REF" || error "Could not clone project skeleton."
 
-cd "$TMP"
-cd proj2 || error "You haven't pushed the proj2 directory to github."
+cd "$TMP/proj2" || error "You haven't pushed the proj2 directory to github."
 
 if [ "$1" == "part2" ]; then
     git checkout proj2-2 || error "You haven't tagged any commit proj2-2"
+    cp disassemble.c "$REF/proj2/"
+    cd "$REF/proj2/"
 	make runtest &&
 	    ok "You have submitted proj2-2 correctly." ||
 	    warning "Your tagged commit does not pass 'make runtest'. Either your code is not working, or you have tagged the wrong commit."
 else
     git checkout proj2-1 || error "You haven't tagged any commit proj2-1"
+    cp disassemble.c "$REF/proj2/"
+    cp processor.c "$REF/proj2/"
+    cp memory.c "$REF/proj2/"
+    cd "$REF/proj2/"
     make disasmtest &&
         ok "You have submitted proj2-1 correctly." ||
         warning "Your tagged commit does not pass 'make disasmtest'. Either your code is not working, or you have tagged the wrong commit."
 fi
 
-rm -rf "$TMP"
+rm -rf "$TMP" "$REF"
 
 exit 0
