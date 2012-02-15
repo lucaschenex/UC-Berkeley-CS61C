@@ -5,3 +5,4 @@ proj2/*.trace
 proj2/mipscode/ackermann
 proj2/mipscode/insts
 proj2/mipscode/simple
+proj2/.check_submission_*
