@@ -10,7 +10,7 @@ uint8_t *mem;
 /* Called by program loader to initialize memory. */
 uint8_t *init_mem() {
   assert (mem == NULL);
-  mem = calloc(sizeof(uint8_t), MEM_SIZE); // allocate zeroed memory
+  mem = calloc(MEM_SIZE, sizeof(uint8_t)); // allocate zeroed memory
   return mem;
 }
 
