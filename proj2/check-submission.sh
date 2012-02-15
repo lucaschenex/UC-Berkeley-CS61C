@@ -33,7 +33,7 @@ If stuck, please stop by office hours or lab to talk to a TA. There are also man
 
 ok() {
     echo -e "\e[01;32mSUCCESS: $1\e[00m"
-    echo -e "\e[00;32mYou tagged: $2\e[00m"
+    echo -e "\e[00;32mYou tagged $2\e[00m"
 }
 
 rm -rf "$TMP" "$REF"
