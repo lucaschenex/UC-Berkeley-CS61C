@@ -1,0 +1,13 @@
+Benjamin han
+cs61c-mm
+lab 4
+
+1.1) run [args]
+1.2) condition [number] [conditional]
+1.3) next n
+1.4) step s
+1.5) continue c
+1.6) print[/f] [expression]
+1.7) display[/f] [expression]
+1.8) info locals
+1.9) quit
