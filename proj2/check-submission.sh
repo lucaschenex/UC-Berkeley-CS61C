@@ -50,7 +50,7 @@ if [ "$1" == "part2" ]; then
     cp memory.c "$REF/proj2/" || warning "You did not submit proj2/memory.c" "$COMMIT"
     cd "$REF/proj2/"
 	make runtest &&
-	    ok "You have submitted proj2-2 correctly." ||
+	    ok "You have submitted proj2-2 correctly." "$COMMIT" ||
 	    warning "Your tagged commit does not pass 'make runtest'. Either your code is not working, or you have tagged the wrong commit." "$COMMIT"
 else
     git checkout proj2-1 || error "You haven't tagged any commit proj2-1"
