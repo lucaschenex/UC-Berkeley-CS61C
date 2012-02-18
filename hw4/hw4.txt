@@ -1,0 +1,60 @@
+Benjamin han
+cs61c-mm
+Hw4
+
+1a) 0
+1b) 3212836864
+1c) 2139095040
+1d) 1149247488
+
+2)
+float unsignedToFloat( unsigned int x ) {
+    unsigned int result = 0;
+
+    div_t n = div(x, 16);
+    if (n.quot) {
+       result = n.rem + 10 * unSignedToFloat( x / 16);
+    }
+ 
+    /* read the result as float and return */
+    return *(float*)&result;
+
+}
+
+3a) 	li      $t0, 11
+	sll	$t0, $t0, 16
+	li      $t1, 28610
+	or	$s0, $t0, $t1  \\ $s0 = 0x000B6FC2
+3b) 	li      $t0, 296
+	sll	$t0, $t0, 16
+	li      $t1, 20512
+	or	$s0, $t0, $t1  \\ $s0 = 0x01285020
+3c) 	li      $t0, 36105
+	sll	$t0, $t0, 16
+	li      $t1, 65532
+	or	$s0, $t0, $t1  \\ $s0 = 0x8D09FFFC
+3d) 	li      $t0, 13090
+	sll	$t0, $t0, 16
+	li      $t1, 65532
+	or	$s0, $t0, $t1  \\ $s0 = 0x3322FFFC
+3e) 	li      $t0, 8200
+	sll	$t0, $t0, 16
+	li      $t1, 65532
+	or	$s0, $t0, $t1  \\ $s0 = 0x2008FFFC
+3f) 	li      $t0, 9455
+	sll	$t0, $t0, 16
+	li      $t1, 65532
+	or	$s0, $t0, $t1  \\ $s0 = 0x24EFFFFC
+3g) 	li      $t0, 15376
+	sll	$t0, $t0, 16
+	li      $t1, 65532
+	or	$s0, $t0, $t1  \\ $s0 = 0x3C10FFFC
+
+4)
+Address   Machine code         Instruction
+0x400000        j 10250           jal mul
+0x401000  mul:                    mul: addu $a0, $a0, $a1
+0x401004                          addiu $a2, $a2, -1
+0x401008                          bne $a2, $0, mul
+0x40100c                          add $v0, $a0, $0
+0x401010                          jr $ra
