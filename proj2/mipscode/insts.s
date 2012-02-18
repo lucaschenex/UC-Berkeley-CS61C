@@ -101,6 +101,7 @@ _start:
         bne   $4, $5, fail
 
         # test #12: jal
+        li    $30, 12
         li    $4, 0
         li    $5, 911
         jal   1f
