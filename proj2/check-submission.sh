@@ -49,7 +49,7 @@ if [ "$1" == "part2" ]; then
     cd "$REF/proj2/"
 	make runtest &&
 	    ok "You have submitted proj2-2 correctly." "$COMMIT" ||
-	    bad_submit "Your tagged commit does not pass 'make runtest'. Either your code is not working, you have not committed your changes, or you have tagged the wrong commit." "$COMMIT"
+	    bad_submit "Your tagged commit does not pass 'make runtest'. Either your code is not working, you have not committed your changes, or you have tagged the wrong commit. Perhaps running 'git status' or 'gitk' will be helpful for you." "$COMMIT"
 else
     git checkout proj2-1 || no_submit "You haven't tagged any commit proj2-1"
     COMMIT=`git log -1`
@@ -57,7 +57,7 @@ else
     cd "$REF/proj2/"
     make disasmtest &&
         ok "You have submitted proj2-1 correctly." "$COMMIT" ||
-        bad_submit "Your tagged commit does not pass 'make disasmtest'. Either your code is not working, you have not committed your changes, or you have tagged the wrong commit." "$COMMIT"
+        bad_submit "Your tagged commit does not pass 'make disasmtest'. Either your code is not working, you have not committed your changes, or you have tagged the wrong commit. Perhaps running 'git status' or 'gitk' will be helpful for you." "$COMMIT"
 fi
 
 rm -rf "$TMP" "$REF"
