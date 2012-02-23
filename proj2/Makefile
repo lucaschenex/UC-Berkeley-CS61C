@@ -15,7 +15,7 @@ mipscode/%.o: mipscode/%.c
 	mips-gcc -O2 -o $@ -c $<
 
 $(addprefix mipscode/, $(C_TESTS)): %: %.c mipscode/mips.ld mipscode/crt.o
-	mips-gcc -O2 -o $(patsubst %.c, %.o, $<) -c $<
+	mips-gcc -march=mips1 -O2 -o $(patsubst %.c, %.o, $<) -c $<
 	mips-ld -o $@ mipscode/crt.o $(patsubst %.c, %.o, $<) -T mipscode/mips.ld
 
 $(addprefix mipscode/, $(ASM_TESTS)): %: %.s mipscode/mips.ld
