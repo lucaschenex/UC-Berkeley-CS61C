@@ -31,17 +31,17 @@ void execute_one_inst(processor_t* p, int prompt, int print_regs)
     {
 		
     case 0x0: // funct == 0x0 (sll)
-	//finish
+	p->R[inst.rtype.rd] = p->R[inst.rtype.rt] << p->R[inst.rtype.shamt];
 	p->pc += 4;
 	break;
 	
     case 0x2: // funct == 0x2 (srl)
-	//finish
+	p->R[inst.rtype.rd] = (unsigned int)p->R[inst.rtype.rt] >> p->R[inst.rtype.shamt];
 	p->pc += 4;
 	break;
 
     case 0x3: // funct == 0x3 (sra)
-	//finish
+	p->R[inst.rtype.rd] = p->R[inst.rtype.rt] >> p->R[inst.rtype.shamt];
 	p->pc += 4;
 	break;
 
@@ -61,17 +61,17 @@ void execute_one_inst(processor_t* p, int prompt, int print_regs)
       break;
 
     case 0x21: // funct == 0x21 (addu)
-	//finish
+	p->R[inst.rtype.rd] = p->R[inst.rtype.rs] + p->R[inst.rtype.rt];
 	p->pc += 4;
 	break;
 
     case 0x23: // funct == 0x23 (subu)
-	//finish
+	p->R[inst.rtype.rd] = p->R[inst.rtype.rs] - p->R[inst.rtype.rt];
 	p->pc += 4;
 	break;
 
     case 0x24: // funct == 0x24 (and)
-	//finish
+	p->R[inst.rtype.rd] = p->R[inst.rtype.rs] & p->R[inst.rtype.rt];
 	p->pc += 4;
 	break;
       
@@ -81,27 +81,27 @@ void execute_one_inst(processor_t* p, int prompt, int print_regs)
       break;
 
     case 0x26: // funct == 0x26 (xor)
-	//finish
+	p->R[inst.rtype.rd] = p->R[inst.rtype.rs] ^ p->R[inst.rtype.rt];
 	p->pc += 4;
 	break;
 
     case 0x27: // funct == 0x27 (nor)
-	//finish
+	p->R[inst.rtype.rd] = ~(p->R[inst.rtype.rs] | p->R[inst.rtype.rt]);
 	p->pc += 4;
 	break;
 
     case 0x2a: // funct == 0x2a (slt)
-	//finish
+	p->R[inst.rtype.rd] = (signed int)p->R[inst.rtype.rs] < (signed int)p->R[inst.rtype.rt];
 	p->pc += 4;
 	break;
 
     case 0x2b: // funct == 0x2b (sltu)
-	//finish
+	p->R[inst.rtype.rd] = ((unsigned int)p->R[inst.rtype.rs]) < ((unsigned int)p->R[inst.rtype.rt]);
 	p->pc += 4;
 	break;
 
     default: // undefined funct
-      fprintf(stderr, "%s: pc=%08x, illegal instruction=%08x\n", __FUNCTION__, p->pc, inst.bits);
+      fprintf(stderr, "%s: pc=%08x, illegale instruction=%08x\n", __FUNCTION__, p->pc, inst.bits);
       exit(-1);
       break;
     }
@@ -202,7 +202,7 @@ void execute_one_inst(processor_t* p, int prompt, int print_regs)
       break;
      
   default: // undefined opcode
-    fprintf(stderr, "%s: pc=%08x, illegal instruction: %08x\n", __FUNCTION__, p->pc, inst.bits);
+    fprintf(stderr, "%s: pc=%08x, illegald instruction: %08x\n", __FUNCTION__, p->pc, inst.bits);
     exit(-1);
     break;
   }

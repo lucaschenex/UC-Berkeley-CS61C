@@ -51,10 +51,10 @@ float unsignedToFloat( unsigned int x ) {
 	or	$s0, $t0, $t1  \\ $s0 = 0x3C10FFFC
 
 4)
-Address   Machine code         Instruction
-0x400000        j 10250           jal mul
-0x401000  mul:                    mul: addu $a0, $a0, $a1
-0x401004                          addiu $a2, $a2, -1
-0x401008                          bne $a2, $0, mul
-0x40100c                          add $v0, $a0, $0
-0x401010                          jr $ra
+Address   Machine code              Instruction
+0x400000       J 0x3 0x100400            jal mul
+0x401000  mul: R 0x0 4  5 4 0 0xc   mul: addu $a0, $a0, $a1
+0x401004       I 0x9 6  6 -1             addiu $a2, $a2, -1
+0x401008       I 0x5 6  0 0x100400       bne $a2, $0, mul
+0x40100c       R 0   4  0 2 0 32         add $v0, $a0, $0
+0x401010       R 0x0 31 0 0 0 0x8        jr $ra

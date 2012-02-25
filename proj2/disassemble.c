@@ -20,7 +20,7 @@ void disassemble(inst_t inst)
     case 0x2: // funct == 0x2 (srl)
 	printf("srl\t$%d,$%d,%u\n", inst.rtype.rd, inst.rtype.rt, inst.rtype.shamt);
 	break;
-
+	
     case 0x3: // funct == 0x3 (sra)
 	printf("sra\t$%d,$%d,%u\n", inst.rtype.rd, inst.rtype.rt, inst.rtype.shamt);
 	break;
@@ -85,23 +85,23 @@ void disassemble(inst_t inst)
       break;
 
   case 0x4: // opcode == 0x4 (beq)
-      printf("beq\t$%d,$%d,%d\n", inst.itype.rs, inst.itype.rt, 4 * inst.itype.imm);
+      printf("beq\t$%d,$%d,%u\n", inst.itype.rs, inst.itype.rt, 4 * inst.itype.imm);
       break;
 
   case 0x5: // opcode == 0x5 (bne)
-      printf("bne\t$%d,$%d,%d\n", inst.itype.rs, inst.itype.rt, 4 * inst.itype.imm);
+      printf("bne\t$%d,$%d,%u\n", inst.itype.rs, inst.itype.rt, 4 * inst.itype.imm);
       break;
 
   case 0x9: // opcode == 0x9 (addiu)
-      printf("addiu\t$%d,$%d,%d\n", inst.itype.rt, inst.itype.rs, inst.itype.imm);
+      printf("addiu\t$%d,$%d,%u\n", inst.itype.rt, inst.itype.rs, inst.itype.imm);
       break;
 
   case 0xa: // opcode == 0xa (slti)
-      printf("slti\t$%d,$%d,0x%x\n", inst.itype.rt, inst.itype.rs, inst.itype.imm);
+      printf("slti\t$%d,$%d,%u\n", inst.itype.rt, inst.itype.rs, inst.itype.imm);
       break;
 
   case 0xb: // opcode == 0xb (sltiu)
-      printf("sltiu\t$%d,$%d,0x%x\n", inst.itype.rt, inst.itype.rs, inst.itype.imm);
+      printf("sltiu\t$%d,$%d,%u\n", inst.itype.rt, inst.itype.rs, inst.itype.imm);
       break;
 
   case 0xc: // opcode == 0xc (andi)
@@ -121,35 +121,35 @@ void disassemble(inst_t inst)
       break;
 
   case 0x20: // opcode == 0x20 (lb)
-      printf("lb\t$%d,%d($%d)\n", inst.itype.rt, 4 * inst.itype.imm, inst.itype.rs);
+      printf("lb\t$%d,%u($%d)\n", inst.itype.rt, 4 * inst.itype.imm, inst.itype.rs);
       break;
 
   case 0x21: // opcode == 0x21 (lh)
-      printf("lh\t$%d,%d($%d)\n", inst.itype.rt, 4 * inst.itype.imm, inst.itype.rs);
+      printf("lh\t$%d,%u($%d)\n", inst.itype.rt, 4 * inst.itype.imm, inst.itype.rs);
       break;
 
   case 0x23: // opcode == 0x23 (lw)
-      printf("lw\t$%d,%d($%d)\n", inst.itype.rt, 4 * inst.itype.imm, inst.itype.rs);
+      printf("lw\t$%d,%u($%d)\n", inst.itype.rt, 4 * inst.itype.imm, inst.itype.rs);
       break;
 
   case 0x24: // opcode == 0x24 (lbu)
-      printf("lbu\t$%d,%d($%d)\n", inst.itype.rt, 4 * inst.itype.imm, inst.itype.rs);
+      printf("lbu\t$%d,%u($%d)\n", inst.itype.rt, 4 * inst.itype.imm, inst.itype.rs);
       break;
 
   case 0x25: // opcode == 0x25 (lhu)
-      printf("lhu\t$%d,%d($%d)\n", inst.itype.rt, 4 * inst.itype.imm, inst.itype.rs);
+      printf("lhu\t$%d,%u($%d)\n", inst.itype.rt, 4 * inst.itype.imm, inst.itype.rs);
       break;
 
   case 0x28: // opcode == 0x28 (sb)
-      printf("sb\t$%d,%d($%d)\n", inst.itype.rt, 4 * inst.itype.imm, inst.itype.rs);
+      printf("sb\t$%d,%u($%d)\n", inst.itype.rt, 4 * inst.itype.imm, inst.itype.rs);
       break;
 
   case 0x29: // opcode == 0x29 (sh)
-      printf("sh\t$%d,%d($%d)\n", inst.itype.rt, 4 * inst.itype.imm, inst.itype.rs);
+      printf("sh\t$%d,%u($%d)\n", inst.itype.rt, 4 * inst.itype.imm, inst.itype.rs);
       break;
       
   case 0x2b: // opcode == 0x2b (sw)
-      printf("sw\t$%d,%d($%d)\n", inst.itype.rt, 4 * inst.itype.imm, inst.itype.rs);
+      printf("sw\t$%d,%u($%d)\n", inst.itype.rt, 4 * inst.itype.imm, inst.itype.rs);
       break;
     
   default: // undefined opcode
