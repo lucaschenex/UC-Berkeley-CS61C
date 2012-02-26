@@ -41,13 +41,13 @@ void store_mem(uint32_t mipsaddr, mem_unit_t size, uint32_t value) {
   //}
   
   if (size == 4) {
-      *(mem + mipsaddr) = value;
+      *(uint32_t*)(mem + mipsaddr) = (uint32_t)value;
   } else if (size == 2) {
-      *(mem + mipsaddr) = (0x0000ffff) & value;
+      *(uint16_t*)(mem + mipsaddr) = (uint16_t)value;
   } else if (size == 1) {
-      *(mem + mipsaddr) = (0x000000ff) & value;
+      *(uint8_t*)(mem + mipsaddr) = (uint8_t)value;
   } else {
-    fprintf(stderr, "%s: bad read=%08x\n", __FUNCTION__, mipsaddr);
+      fprintf(stderr, "bad size in store=%d, addr=0x%x\n", size, mipsaddr);
     exit(-1);
   }      
   
@@ -56,7 +56,7 @@ void store_mem(uint32_t mipsaddr, mem_unit_t size, uint32_t value) {
 /* Returns zero-extended value from mips memory */
 uint32_t load_mem(uint32_t mipsaddr, mem_unit_t size) {
   if (!access_ok(mipsaddr, size)) {
-    fprintf(stderr, "%s: bad read=%08x\n", __FUNCTION__, mipsaddr);
+    fprintf(stderr, "%s: bad size in read, size=%08x\n", __FUNCTION__, mipsaddr);
     exit(-1);
   }
 
@@ -71,12 +71,12 @@ uint32_t load_mem(uint32_t mipsaddr, mem_unit_t size) {
   if (size == 4) {
       return *(uint32_t*)(mem + mipsaddr);
   } else if (size == 2) {
-      return *(uint16_t*)(mem + mipsaddr);
+     return *(uint16_t*)(mem + mipsaddr);
   } else if (size == 1) {
       return *(uint8_t*)(mem + mipsaddr);
   } else {
-    fprintf(stderr, "%s: bad read=%08x\n", __FUNCTION__, mipsaddr);
-    exit(-1);
+      fprintf(stderr, "bad size in load, size=%d, addr=0x%x\n", size, mipsaddr);
+      exit(-1);
   }      
   
   // incomplete stub to let mipscode/simple execute

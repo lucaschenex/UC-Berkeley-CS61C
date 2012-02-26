@@ -1,3 +1,4 @@
+
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -49,28 +50,28 @@ void execute_one_inst(processor_t* p, int prompt, int print_regs)
     {
 		
     case 0x0: // funct == 0x0 (sll)
-	p->R[inst.rtype.rd] = p->R[inst.rtype.rt] << p->R[inst.rtype.shamt];
+	p->R[inst.rtype.rd] = p->R[inst.rtype.rt] << inst.rtype.shamt;
 	p->pc += 4;
 	break;
 	
     case 0x2: // funct == 0x2 (srl)
-	p->R[inst.rtype.rd] = (unsigned int)p->R[inst.rtype.rt] >> p->R[inst.rtype.shamt];
+	p->R[inst.rtype.rd] = (unsigned int)p->R[inst.rtype.rt] >> inst.rtype.shamt;
 	p->pc += 4;
 	break;
 
     case 0x3: // funct == 0x3 (sra)
-	p->R[inst.rtype.rd] = p->R[inst.rtype.rt] >> p->R[inst.rtype.shamt];
+	p->R[inst.rtype.rd] = p->R[inst.rtype.rt] >> inst.rtype.shamt;
 	p->pc += 4;
 	break;
 
     case 0x8: // funct == 0x8 (jr)
-	p->pc = ((p->pc+4) & p->R[inst.rtype.rs]) | (inst.jtype.addr << 2);
+	p->pc = p->R[inst.rtype.rs];
 	p->pc += 4;
 	break;
 
     case 0x9: // funct == 0x9 (jalr)
 	tmp = p->pc + 4;
-	p->pc = ((p->pc+4) & p->R[inst.rtype.rs]) | (inst.jtype.addr << 2);
+	p->pc = p->R[inst.rtype.rs];
 	p->R[inst.rtype.rd] = tmp;
 	break;	
 	
@@ -137,46 +138,46 @@ void execute_one_inst(processor_t* p, int prompt, int print_regs)
       break;
 
   case 0x4: // opcode == 0x4 (beq)
-      if (p->R[inst.rtype.rs] == p->R[inst.rtype.rt]) {	
-	  p->pc += 4 * signExtendW(p->R[inst.itype.imm]);
+      if (p->R[inst.rtype.rs] == (signed int) p->R[inst.rtype.rt]) {	
+	  p->pc += 4 * inst.itype.imm;
       }	
       p->pc += 4;
       break;
 
   case 0x5: // opcode == 0x5 (bne)
-      if (p->R[inst.rtype.rs] != p->R[inst.rtype.rt]) {	
-	  p->pc += 4 * signExtendW(p->R[inst.itype.imm]);
+      if (p->R[inst.rtype.rs] != (signed int) p->R[inst.rtype.rt]) {	
+	  p->pc += 4 * inst.itype.imm;
       }
       p->pc += 4;
       break;
 
   case 0x9: // opcode == 0x9 (addiu)
-      p->R[inst.rtype.rt] = p->R[inst.rtype.rs] + signExtendW(p->R[inst.itype.imm]);
+      p->R[inst.rtype.rt] = p->R[inst.rtype.rs] + (signed int) inst.itype.imm;
       p->pc += 4;
       break;
 
   case 0xa: // opcode == 0xa (slti)
-      p->R[inst.rtype.rt] = (p->R[inst.rtype.rs] < signExtendW(p->R[inst.itype.imm]));
+      p->R[inst.rtype.rt] = p->R[inst.rtype.rs] < signExtendW(inst.itype.imm);
       p->pc += 4;
       break;
 
   case 0xb: // opcode == 0xb (sltiu)
-      p->R[inst.rtype.rt] = ((unsigned int)p->R[inst.rtype.rs]) < signExtendW(p->R[inst.itype.imm]);
+      p->R[inst.rtype.rt] = ((unsigned int)p->R[inst.rtype.rs]) < signExtendW(inst.itype.imm);
       p->pc += 4;
       break;
 
   case 0xc: // opcode == 0xc (andi)
-      p->R[inst.rtype.rt] = p->R[inst.rtype.rs] & p->R[inst.itype.imm];
+      p->R[inst.rtype.rt] = p->R[inst.rtype.rs] & (inst.itype.imm | 0x00000000);
       p->pc += 4;
       break;
 
   case 0xd: // opcode == 0xd (ORI)
-    p->R[inst.itype.rt] = p->R[inst.itype.rs] | inst.itype.imm;
+    p->R[inst.itype.rt] = p->R[inst.itype.rs] | (inst.itype.imm | 0x00000000);
     p->pc += 4;
     break;
 
   case 0xe: // opcode == 0xe (xori)
-      p->R[inst.itype.rt] = p->R[inst.itype.rs] ^ inst.itype.imm;
+      p->R[inst.itype.rt] = p->R[inst.itype.rs] ^ (inst.itype.imm | 0x00000000);
       p->pc += 4;
       break;
 
@@ -196,7 +197,7 @@ void execute_one_inst(processor_t* p, int prompt, int print_regs)
       break;
 
   case 0x23: // opcode == 0x23 (lw)
-      p->R[inst.itype.rt] = load_mem(p->R[inst.itype.rs] + signExtendW(inst.itype.imm), SIZE_WORD);
+      p->R[inst.itype.rt] = signExtendW(load_mem(p->R[inst.itype.rs] + signExtendW(inst.itype.imm), SIZE_WORD));
       p->pc += 4;
       break;
 
@@ -206,7 +207,7 @@ void execute_one_inst(processor_t* p, int prompt, int print_regs)
       break;
 
   case 0x25: // opcode == 0x25 (lhu)
-      p->R[inst.itype.rt] = load_mem(p->R[inst.itype.rs] + signExtendW(inst.itype.imm), SIZE_HALF_WORD);
+      p->R[inst.itype.rt] = load_mem(p->R[inst.itype.rs] + signExtendW(inst.itype.imm), SIZE_HALF_WORD) | 0x00000000;
       p->pc += 4;
       break;
 
