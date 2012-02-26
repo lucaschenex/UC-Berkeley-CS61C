@@ -33,11 +33,23 @@ void store_mem(uint32_t mipsaddr, mem_unit_t size, uint32_t value) {
   }
   
   /* TODO YOUR CODE HERE */
-  int val;
-  for (int i = &value, int* j = mipsaddr + mem; j < (mipsaddr + mem + size); i++, j++) {
-      val = *i;
-      *j = val;
-  }
+  //int val;
+  //int *i = &value;
+  //for (i = &value, int* j = mipsaddr + mem; j < (mipsaddr + mem + size); i++, j++) {
+  //    val = *i;
+  //    *j = val;
+  //}
+  
+  if (size == 4) {
+      *(mem + mipsaddr) = value;
+  } else if (size == 2) {
+      *(mem + mipsaddr) = (0x0000ffff) & value;
+  } else if (size == 1) {
+      *(mem + mipsaddr) = (0x000000ff) & value;
+  } else {
+    fprintf(stderr, "%s: bad read=%08x\n", __FUNCTION__, mipsaddr);
+    exit(-1);
+  }      
   
 }
 
