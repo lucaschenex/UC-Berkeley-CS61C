@@ -18,6 +18,9 @@ uint8_t *init_mem() {
 int access_ok(uint32_t mipsaddr, mem_unit_t size) {
 
   /* TODO YOUR CODE HERE */
+    if ((size != 4) & (size != 2) & (size != 1)) {
+	return 0;
+    }
     return ((mipsaddr % size) == 0);
     
 }
@@ -28,18 +31,14 @@ void store_mem(uint32_t mipsaddr, mem_unit_t size, uint32_t value) {
     fprintf(stderr, "%s: bad write=%08x\n", __FUNCTION__, mipsaddr);
     exit(-1);
   }
-
+  
   /* TODO YOUR CODE HERE */
-  //int i; int j;
-  //for (i = 0, j = mipsaddr; i < size; i++, j++) {
-  if (size == 4) {
-      *(mem + mipsaddr) = value;
-  } else if (size == 2) {
-      *(mem + mipsaddr) = value;
-  } else {
-      *(mem + mipsaddr) = value;
+  int val;
+  for (int i = &value, int* j = mipsaddr + mem; j < (mipsaddr + mem + size); i++, j++) {
+      val = *i;
+      *j = val;
   }
-
+  
 }
 
 /* Returns zero-extended value from mips memory */
@@ -49,14 +48,24 @@ uint32_t load_mem(uint32_t mipsaddr, mem_unit_t size) {
     exit(-1);
   }
 
-  /* TODO YOUR CODE HERE */
+  /* TODO YOUR CODE HERE */  
+  //int i; int j; int val = 0;
+  //for (i = 0, j = mipsaddr + mem; i < size; i++, j++) {
+  //    val *= 16;
+  //    val += *(mem + j);
+  //}
+  //return *(uint32_t*)val;
+
   if (size == 4) {
       return *(uint32_t*)(mem + mipsaddr);
   } else if (size == 2) {
+      return *(uint16_t*)(mem + mipsaddr);
+  } else if (size == 1) {
       return *(uint8_t*)(mem + mipsaddr);
   } else {
-      return *(mem + mipsaddr);
-  }
+    fprintf(stderr, "%s: bad read=%08x\n", __FUNCTION__, mipsaddr);
+    exit(-1);
+  }      
   
   // incomplete stub to let mipscode/simple execute
   // (only handles size == SIZE_WORD correctly)

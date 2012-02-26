@@ -4,9 +4,27 @@
 #include "processor.h"
 #include "disassemble.h"
 
+int32_t signExtendW(int32_t n) {
+    return (int32_t)(int16_t)n;
+}
+
+int32_t signExtend(int32_t n, mem_unit_t size) {
+    if (size == 4) {
+	return signExtendW(n);
+    } else if (size == 2) {
+	return (int32_t)(int16_t)n;
+    } else if (size == 1) {
+	return (int32_t)(int8_t)n;
+    } else {
+	fprintf(stderr, "signExtend error: size = %d", size);
+	exit(-1);
+    }	
+}
+
 void execute_one_inst(processor_t* p, int prompt, int print_regs)
 {
   inst_t inst;
+  int tmp;
 
   /* fetch an instruction */
   inst.bits = load_mem(p->pc, SIZE_WORD);
@@ -46,13 +64,14 @@ void execute_one_inst(processor_t* p, int prompt, int print_regs)
 	break;
 
     case 0x8: // funct == 0x8 (jr)
-	//finish
+	p->pc = ((p->pc+4) & p->R[inst.rtype.rs]) | (inst.jtype.addr << 2);
 	p->pc += 4;
 	break;
 
     case 0x9: // funct == 0x9 (jalr)
-	//finish
-	p->pc += 4;
+	tmp = p->pc + 4;
+	p->pc = ((p->pc+4) & p->R[inst.rtype.rs]) | (inst.jtype.addr << 2);
+	p->R[inst.rtype.rd] = tmp;
 	break;	
 	
     case 0xc: // funct == 0xc (SYSCALL)
@@ -112,37 +131,42 @@ void execute_one_inst(processor_t* p, int prompt, int print_regs)
     break;
 
   case 0x3: // opcode == 0x3 (jal)
-      //finish
-      p->pc += 4;
+      tmp = p->pc + 4;
+      p->pc = ((p->pc+4) & 0xf0000000) | (inst.jtype.addr << 2);
+      p->R[31] = tmp;
       break;
 
   case 0x4: // opcode == 0x4 (beq)
-      //finish
+      if (p->R[inst.rtype.rs] == p->R[inst.rtype.rt]) {	
+	  p->pc += 4 * signExtendW(p->R[inst.itype.imm]);
+      }	
       p->pc += 4;
       break;
 
   case 0x5: // opcode == 0x5 (bne)
-      //finish
+      if (p->R[inst.rtype.rs] != p->R[inst.rtype.rt]) {	
+	  p->pc += 4 * signExtendW(p->R[inst.itype.imm]);
+      }
       p->pc += 4;
       break;
 
   case 0x9: // opcode == 0x9 (addiu)
-      //finish
+      p->R[inst.rtype.rt] = p->R[inst.rtype.rs] + signExtendW(p->R[inst.itype.imm]);
       p->pc += 4;
       break;
 
   case 0xa: // opcode == 0xa (slti)
-      //finish
+      p->R[inst.rtype.rt] = (p->R[inst.rtype.rs] < signExtendW(p->R[inst.itype.imm]));
       p->pc += 4;
       break;
 
   case 0xb: // opcode == 0xb (sltiu)
-      //finish
+      p->R[inst.rtype.rt] = ((unsigned int)p->R[inst.rtype.rs]) < signExtendW(p->R[inst.itype.imm]);
       p->pc += 4;
       break;
 
   case 0xc: // opcode == 0xc (andi)
-      //finish
+      p->R[inst.rtype.rt] = p->R[inst.rtype.rs] & p->R[inst.itype.imm];
       p->pc += 4;
       break;
 
@@ -152,52 +176,52 @@ void execute_one_inst(processor_t* p, int prompt, int print_regs)
     break;
 
   case 0xe: // opcode == 0xe (xori)
-      //finish
+      p->R[inst.itype.rt] = p->R[inst.itype.rs] ^ inst.itype.imm;
       p->pc += 4;
       break;
 
   case 0xf: // opcode == 0xf (lui)
-      //finish
+      p->R[inst.itype.rt] = inst.itype.imm << 16;
       p->pc += 4;
       break;
 
   case 0x20: // opcode == 0x20 (lb)
-      //finish
+      p->R[inst.itype.rt] = signExtend(load_mem(p->R[inst.itype.rs] + signExtendW(inst.itype.imm), SIZE_BYTE), SIZE_BYTE);
       p->pc += 4;
       break;
 
   case 0x21: // opcode == 0x21 (lh)
-      //finish
+      p->R[inst.itype.rt] = signExtend(load_mem(p->R[inst.itype.rs] + signExtendW(inst.itype.imm), SIZE_HALF_WORD), SIZE_HALF_WORD);
       p->pc += 4;
       break;
 
   case 0x23: // opcode == 0x23 (lw)
-      //finish
+      p->R[inst.itype.rt] = load_mem(p->R[inst.itype.rs] + signExtendW(inst.itype.imm), SIZE_WORD);
       p->pc += 4;
       break;
 
   case 0x24: // opcode == 0x24 (lbu)
-      //finish
+      p->R[inst.itype.rt] = load_mem(p->R[inst.itype.rs] + signExtendW(inst.itype.imm), SIZE_BYTE);
       p->pc += 4;
       break;
 
   case 0x25: // opcode == 0x25 (lhu)
-      //finish
+      p->R[inst.itype.rt] = load_mem(p->R[inst.itype.rs] + signExtendW(inst.itype.imm), SIZE_HALF_WORD);
       p->pc += 4;
       break;
 
   case 0x28: // opcode == 0x28 (sb)
-      //finish
+      store_mem(p->R[inst.itype.rs] + signExtendW(inst.itype.imm), SIZE_BYTE, p->R[inst.itype.rt]);
       p->pc += 4;
       break;
 
   case 0x29: // opcode == 0x29 (sh)
-      //finish
+      store_mem(p->R[inst.itype.rs] + signExtendW(inst.itype.imm), SIZE_HALF_WORD, p->R[inst.itype.rt]);
       p->pc += 4;
       break;
       
   case 0x2b: // opcode == 0x2b (sw)
-      //finish
+      store_mem(p->R[inst.itype.rs] + signExtendW(inst.itype.imm), SIZE_WORD, p->R[inst.itype.rt]);
       p->pc += 4;
       break;
      

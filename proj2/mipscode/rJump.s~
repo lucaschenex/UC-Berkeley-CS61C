@@ -1,0 +1,40 @@
+.text
+
+# _start is the entry point into any program.
+.global _start
+.ent    _start 
+_start:
+
+#
+#  The header ends here, and code goes below
+#
+	# Jump register
+	jalr	jump, $s0
+	
+	# print sll text
+	ori   $a0, $zero, jalr
+	ori   $v0, $zero, 4
+	syscall
+	jr 	end
+	
+# exit the simulation (v0 = 10, syscall)
+end:
+	ori   $a0, $zero, jr
+	ori   $v0, $zero, 4
+	syscall
+	ori   $v0, $zero, 10
+	syscall	
+
+jump:
+	ori   $a0, $zero, jalr
+	ori   $v0, $zero, 4
+	syscall
+	jr    	$s0
+	
+.end _start
+
+.data
+newline: .asciiz " \n"
+jalr:	.asciiz "Jumped and linked"
+jr:	.asciiz "Jumped"
+	

@@ -85,23 +85,23 @@ void disassemble(inst_t inst)
       break;
 
   case 0x4: // opcode == 0x4 (beq)
-      printf("beq\t$%d,$%d,%u\n", inst.itype.rs, inst.itype.rt, 4 * inst.itype.imm);
+      printf("beq\t$%d,$%d,%d\n", inst.itype.rs, inst.itype.rt, 4 * inst.itype.imm);
       break;
 
   case 0x5: // opcode == 0x5 (bne)
-      printf("bne\t$%d,$%d,%u\n", inst.itype.rs, inst.itype.rt, 4 * inst.itype.imm);
+      printf("bne\t$%d,$%d,%d\n", inst.itype.rs, inst.itype.rt, 4 * inst.itype.imm);
       break;
 
   case 0x9: // opcode == 0x9 (addiu)
-      printf("addiu\t$%d,$%d,%u\n", inst.itype.rt, inst.itype.rs, inst.itype.imm);
+      printf("addiu\t$%d,$%d,%d\n", inst.itype.rt, inst.itype.rs, inst.itype.imm);
       break;
 
   case 0xa: // opcode == 0xa (slti)
-      printf("slti\t$%d,$%d,%u\n", inst.itype.rt, inst.itype.rs, inst.itype.imm);
+      printf("slti\t$%d,$%d,%d\n", inst.itype.rt, inst.itype.rs, inst.itype.imm);
       break;
 
   case 0xb: // opcode == 0xb (sltiu)
-      printf("sltiu\t$%d,$%d,%u\n", inst.itype.rt, inst.itype.rs, inst.itype.imm);
+      printf("sltiu\t$%d,$%d,%d\n", inst.itype.rt, inst.itype.rs, inst.itype.imm);
       break;
 
   case 0xc: // opcode == 0xc (andi)
