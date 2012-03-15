@@ -1,0 +1,51 @@
+Benjamin Han
+cs61c-mm
+lab07
+
+Running Part A...
+
+n = 10, 1.000 Gflop/s
+n = 14, 1.372 Gflop/s
+n = 19, 1.372 Gflop/s
+n = 26, 1.528 Gflop/s
+n = 35, 1.531 Gflop/s
+n = 47, 1.550 Gflop/s
+n = 63, 1.563 Gflop/s
+n = 85, 1.450 Gflop/s
+n = 114, 1.478 Gflop/s
+n = 153, 1.510 Gflop/s
+n = 205, 1.093 Gflop/s
+n = 274, 1.518 Gflop/s
+n = 366, 1.428 Gflop/s
+n = 489, 1.257 Gflop/s
+n = 653, 0.888 Gflop/s
+n = 871, 0.227 Gflop/s
+n = 1000, 0.200 Gflop/s
+
+Running Part B...
+
+ijk:	n = 1000, 0.195 Gflop/s
+ikj:	n = 1000, 0.091 Gflop/s
+jik:	n = 1000, 0.197 Gflop/s
+jki:	n = 1000, 1.185 Gflop/s
+kij:	n = 1000, 0.091 Gflop/s
+kji:	n = 1000, 1.519 Gflop/s
+
+1a) As the size of the matrix increases, the proportion of cache misses and repeated memory reads rapidly increases.
+1b) ikj and kij finished in significantly less time than the other iterations.
+    ikj: Stride A 0, B n, C n
+    kij: Stride A 0, B n, C n
+    kji took the longest time to complete.
+    kji: Stride A 1, B 0, C 1
+    It is most important that the inner loop take advantage of locality in the A matrix (Stride A=0)
+
+2a) 43.552 milliseconds
+2b) need to transpose leftovers 1-by-1
+2c) blocksize = 2: 27.53
+    	     = 30: 18.219 (special case)
+    	    = 100: 8.799
+            = 200: 8.394	
+            = 400: 8.131
+           = 1000: 42.996
+
+    

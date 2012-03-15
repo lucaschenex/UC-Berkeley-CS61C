@@ -2,8 +2,7 @@ SOURCES := sim.c processor.c load_program.c disassemble.c memory.c
 HEADERS := elf.h load_program.h processor.h disassemble.h memory.h
 
 ASM_TESTS := simple insts addsub rAndOrXorNor shift rSet rJump jump rt3 rt13 rt25
-C_TESTS := ackermann rt30
-C_TESTS := ackermann rt30
+C_TESTS := ackermann
 
 all: mips-sim $(addprefix mipscode/, $(C_TESTS) $(ASM_TESTS))
 

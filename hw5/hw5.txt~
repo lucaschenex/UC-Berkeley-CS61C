@@ -1,0 +1,20 @@
+Benjamin Han
+cs61c-mm
+hw5
+
+1a. 2^15 * 2^2 = 2^17
+1bi. T: 544, I: 2, O: 0
+1bii. T: 1088, I: 4, O: 0 
+1biii. T: 870, I: 12, O: 0
+1c. T: 4, I: 5, O: 1, maint: 2, db:12;
+    T: 4, I: 5, O: 1, maint: 1, db:11;
+
+2i. Miss rate = 100% since each stride will replace the previous data in a direct-mapped cache.
+2ii. Miss rate = 1/8(throughput) since only each 8th stride will replace previous data since 255 % 8 = 7.
+
+3a. CPI = 1 + (4/5 * 20%)(100) + (1/5 * 95%)(100) = 36 cycles/instruction
+3b. AMAT = 1 + 20%(4 + 10%(20 + 5%(100))) = 7 cycles
+
+4a. 1/(1 - 40% + 40%/4) = 1.43
+4b. 1/(1 - 40% + 40%/8) = 1.54
+4c. n->inf: 1/(1 - 40% + 40%/n) = 1 / 60% = 1.67

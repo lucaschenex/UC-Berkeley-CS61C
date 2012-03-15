@@ -1,0 +1,8 @@
+Benjamin Han
+cs61c-mm
+lab08
+
+_mm_div_ss
+_mm_max_pi16
+_mm_srl_epi16
+
