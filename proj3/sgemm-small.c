@@ -46,36 +46,42 @@ void transpose(int n, int blocksize, float *B) {
  * On exit, A and B maintain their input values. */    
 void square_sgemm (int n, float* A, float* B, float* C)
 {
-    int k, j, k2, j2, i, blocksize = 16, t_blocksize = 400;
-    __m128 mmA, mmB, mmC, mmTmp;
-        //convert B to column major
-    transpose(n, t_blocksize, B);
+    int i, j, k, i2, j2, blocksize = 16, t_blocksize = 400;
+    __m128 mmA, mmB, mmTmp1, mmTmp2, mmTmp3, mmTmp4;
+    //convert A to row major
+    transpose(n, t_blocksize, A);
 
-    for (k = 0; k < n; k += blocksize)
+    float buffer[4] = {0};
+
+    for (i = 0; i < n; i += blocksize)
     for (j = 0; j < n; j += blocksize)
-    for (k2 = k; (k2 < k + blocksize) && (k2 < n); k2++)
+    for (i2 = i; (i2 < i + blocksize) && (i2 < n); i2++)
 	for (j2 = j; (j2 < j + blocksize) && (j2 < n); j2++) {
-        mmB = _mm_load1_ps(B + k2*n + j2);
-            for (i = 0; i < (n / blocksize) * blocksize; i += blocksize) {
-    			mmA = _mm_loadu_ps(A + i + k2*n);
-    			mmC = _mm_loadu_ps(C + i + j2*n);
-    			mmTmp = _mm_add_ps(mmC, _mm_mul_ps(mmA, mmB));
-			    _mm_storeu_ps(C + i + j2*n, mmTmp);
-			    mmA = _mm_loadu_ps(A + i + k2*n + 4);
-    			mmC = _mm_loadu_ps(C + i + j2*n + 4);
-    			mmTmp = _mm_add_ps(mmC, _mm_mul_ps(mmA, mmB));
-			    _mm_storeu_ps(C + i + j2*n + 4, mmTmp);
-			    mmA = _mm_loadu_ps(A + i + k2*n + 8);
-    			mmC = _mm_loadu_ps(C + i + j2*n + 8);
-    			mmTmp = _mm_add_ps(mmC, _mm_mul_ps(mmA, mmB));
-			    _mm_storeu_ps(C + i + j2*n + 8, mmTmp);
-			    mmA = _mm_loadu_ps(A + i + k2*n + 12);
-    			mmC = _mm_loadu_ps(C + i + j2*n + 12);
-    			mmTmp = _mm_add_ps(mmC, _mm_mul_ps(mmA, mmB));
-			    _mm_storeu_ps(C + i + j2*n + 12, mmTmp);
-    		}
-	    for (int i = (n / blocksize * blocksize); i < n; i++)
-            C[i + j2*n] += A[i + k2*n] * B[k2*n + j2];
+        mmTmp1 = _mm_setzero_ps();
+        mmTmp2 = _mm_setzero_ps();
+        mmTmp3 = _mm_setzero_ps();
+        mmTmp4 = _mm_setzero_ps();
+        for (k = 0; k < (n / blocksize) * blocksize; k += blocksize) {
+            mmA = _mm_loadu_ps(A + i2*n + k);
+            mmB = _mm_loadu_ps(B + k + j2*n);
+            mmTmp1 = _mm_add_ps(mmTmp1, _mm_mul_ps(mmA, mmB));
+            mmA = _mm_loadu_ps(A + i2*n + k + 4);
+            mmB = _mm_loadu_ps(B + k + j2*n + 4);
+            mmTmp2 = _mm_add_ps(mmTmp2, _mm_mul_ps(mmA, mmB));
+            mmA = _mm_loadu_ps(A + i2*n + k + 8);
+            mmB = _mm_loadu_ps(B + k + j2*n + 8);
+            mmTmp3 = _mm_add_ps(mmTmp3, _mm_mul_ps(mmA, mmB));
+            mmA = _mm_loadu_ps(A + i2*n + k + 12);
+            mmB = _mm_loadu_ps(B + k + j2*n + 12);
+            mmTmp4 = _mm_add_ps(mmTmp4, _mm_mul_ps(mmA, mmB));
+        }
+        mmTmp1 = _mm_add_ps(mmTmp1, mmTmp2);
+        mmTmp3 = _mm_add_ps(mmTmp3, mmTmp4);
+        mmTmp1 = _mm_add_ps(mmTmp1, mmTmp3);
+        _mm_storeu_ps(buffer, mmTmp1);
+        C[i2 + j2*n] += buffer[0] + buffer[1] + buffer[2] + buffer[3];
+	    for (k = (n / blocksize * blocksize); k < n; k++)
+            C[i2 + j2*n] += A[i2 + k*n] * B[k + j2*n];
     }
 }
 
