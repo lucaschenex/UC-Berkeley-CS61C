@@ -64,6 +64,8 @@ void square_sgemm (int n, float* A, float* B, float* C)
     			mmTmp = _mm_add_ps(mmC, _mm_mul_ps(mmA, mmB));
 			_mm_storeu_ps(C + i + j2*n, mmTmp);
     		    }
+		    for( int i = n/4*4; i < n; i++ )
+			C[i + j2*n] += A[i + k2*n] * B[k2*n + j2];
     		}
     	    }
 }
