@@ -47,7 +47,7 @@ void transpose(int n, int blocksize, float *B) {
 void square_sgemm (int n, float* A, float* B, float* C)
 {
     float tmpA[n]; float tmpC[n];
-    int k, j, k2, j2, i; int blocksize = 64;
+    int k, j, k2, j2, i; int blocksize = 16;
     __m128 mmA; __m128 mmB; __m128 mmC; __m128 mmTmp;
     
     //convert B to column major

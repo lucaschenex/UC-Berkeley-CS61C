@@ -50,9 +50,9 @@ int main( int argc, char **argv )
   // int test_sizes[] =  {64,65,95,96,97,127,128,129,159,160,161,191,192,193,223,224,225,255,256,257,287,288,289,319,320,321,351,352,353,383,384,385,415,416,417,447,448,449,479,480,481,511,512,513,543,544,545,575,576,577,607,608,609,639,640,641,671,672,673,703,704,705,735,736,737,767,768,769,799,800,801,831,832,833,863,864,865,895,896,897,927,928,929,959,960,961,991,992,993,1023,1024};
 
   // subset of above values, you can use this while developing your code
-  int test_sizes[] = { 64, 65, 96, 97, 127, 128, 129, 191, 192, 229, 255, 256, 257, 319, 320, 321, 417, 479, 480, 511, 512, 639, 640, 767, 768, 1023, 1024 };
+  //int test_sizes[] = { 64, 65, 96, 97, 127, 128, 129, 191, 192, 229, 255, 256, 257, 319, 320, 321, 417, 479, 480, 511, 512, 639, 640, 767, 768, 1023, 1024 };
 
-  //int test_sizes[] = { 64, 128, 256, 512, 1024 };
+  int test_sizes[] = { 64, 97, 128, 256, 319, 512, 768, 1024 };
   float total = 0;
 
   /* For each test size */
@@ -86,7 +86,7 @@ int main( int argc, char **argv )
       
       /* compute Gflop/s rate */
       Gflop_s = 2e-9 * n_iterations * n * n * n / seconds;
-      total += seconds;
+      total += Gflop_s;
     }
     
     printf( "%d by %d matrix \t %g Gflop/s\n", n, n, Gflop_s );
@@ -118,6 +118,6 @@ int main( int argc, char **argv )
     free(C);
   }
   
-  printf( "Total elapsed = %d\n", total);
+  printf( "Total = %g Gflop/s\n", total);
   return 0;
 }
