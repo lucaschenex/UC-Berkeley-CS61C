@@ -1,15 +1,3 @@
-/*
-  CS 61C Project3
-
-  Name: Hairan Zhu
-  Login: cs61c-eu
-
-  Name: Benjamin Han
-  Login: cs61c-mm
- */
-
-#include <emmintrin.h> /* where intrinsics are defined */
-
 /* This routine performs a sgemm operation
  *  C := C + A * B
  * where A, B, and C are lda-by-lda matrices stored in column-major format.
