@@ -33,7 +33,7 @@ void transpose(int n, int blocksize, float *B) {
     for ( i = 0; i < n; i += blocksize ) 
 	for ( j = 0; j < n; j += blocksize ) 
 	    for ( k = i; (k < i + blocksize) & (k < n) ; k++ ) 
-		for ( m = j; (m < j + blocksize) & (m < n); m++ ) {
+		for ( m = j; (m < j + blocksize) & (m < k); m++ ) {
 		    tmp = B[k + m*n];
 		    B[m + k*n] = B[k + m*n];
 		    B[m + k*n] = tmp;
@@ -46,12 +46,11 @@ void transpose(int n, int blocksize, float *B) {
  * On exit, A and B maintain their input values. */    
 void square_sgemm (int n, float* A, float* B, float* C)
 {
-    float tmpA[n]; float tmpC[n];
-    int k, j, k2, j2, i; int blocksize = 16;
-    __m128 mmA; __m128 mmB; __m128 mmC; __m128 mmTmp;
-    
-    //convert B to column major
+    int k, j, k2, j2, i, blocksize = 16;
+    __m128 mmA, mmB, mmC, mmTmp;
+        //convert B to column major
     transpose(n, blocksize, B);
+    
     for (k = 0; k < n; k += blocksize)
     	for (j = 0; j < n; j += blocksize)
     	    for (k2 = k; (k2 < k + blocksize) & (k2 < n); k2++) {
@@ -75,7 +74,7 @@ void square_sgemm (int n, float* A, float* B, float* C)
     			mmTmp = _mm_add_ps(mmC, _mm_mul_ps(mmA, mmB));
 			_mm_storeu_ps(C + i + j2*n + 12, mmTmp);
     		    }
-		    for( int i = n/16*16; i < n; i++ )
+		    for(int i = n/16*16; i < n; i++)
 			C[i + j2*n] += A[i + k2*n] * B[k2*n + j2];
     		}
     	    }
