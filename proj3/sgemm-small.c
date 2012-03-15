@@ -52,7 +52,7 @@ void square_sgemm (int n, float* A, float* B, float* C)
     
     //convert B to column major
     transpose(n, blocksize, B);
-    
+    //test
     for (k = 0; k < n; k += blocksize)
     	for (j = 0; j < n; j += blocksize)
     	    for (k2 = k; (k2 < k + blocksize) & (k2 < n); k2++) {
