@@ -61,25 +61,27 @@ void square_sgemm (int n, float* A, float* B, float* C)
 
     __m128 mmA, mmB, mmC;
     int k, j, k2, j2, i;
-    for (k = 0; k < paddedSize; k++)
-	for (j = 0; j < paddedSize; j++) {
-	    mmB = _mm_load1_ps(bTmp + k*paddedSize + j);
-	    for (i = 0; i < paddedSize; i += blocksize) {
-		mmC = _mm_loadu_ps(cTmp + i + j*paddedSize);
-		mmA = _mm_loadu_ps(aTmp + i + k*paddedSize);
-		_mm_storeu_ps(cTmp + i + j*paddedSize, _mm_add_ps(mmC, _mm_mul_ps(mmA, mmB)));
-		mmA = _mm_loadu_ps(aTmp + i + k*paddedSize + 4);
-		mmC = _mm_loadu_ps(cTmp + i + j*paddedSize + 4);
-		_mm_storeu_ps(cTmp + i + j*paddedSize + 4, _mm_add_ps(mmC, _mm_mul_ps(mmA, mmB)));
-		mmA = _mm_loadu_ps(aTmp + i + k*paddedSize + 8);
-		mmC = _mm_loadu_ps(cTmp + i + j*paddedSize + 8);
-		_mm_storeu_ps(cTmp + i + j*paddedSize + 8, _mm_add_ps(mmC, _mm_mul_ps(mmA, mmB)));
-		mmA = _mm_loadu_ps(aTmp + i + k*paddedSize + 12);
-		mmC = _mm_loadu_ps(cTmp + i + j*paddedSize + 12);
-		_mm_storeu_ps(cTmp + i + j*paddedSize + 12, _mm_add_ps(mmC, _mm_mul_ps(mmA, mmB)));
-	    }
-	}
-
+    for (k = 0; k < paddedSize; k += blocksize)
+	for (j = 0; j < paddedSize; j += blocksize)
+	    for (k2 = k; k2 < (k + blocksize); k2++)
+		for (j2 = j; j2 < (j + blocksize); j2++) {
+		    mmB = _mm_load1_ps(bTmp + k2*paddedSize + j2);
+		    for (i = 0; i < paddedSize; i += blocksize) {
+			mmC = _mm_loadu_ps(cTmp + i + j2*paddedSize);
+			mmA = _mm_loadu_ps(aTmp + i + k2*paddedSize);
+			_mm_storeu_ps(cTmp + i + j2*paddedSize, _mm_add_ps(mmC, _mm_mul_ps(mmA, mmB)));
+			mmA = _mm_loadu_ps(aTmp + i + k2*paddedSize + 4);
+			mmC = _mm_loadu_ps(cTmp + i + j2*paddedSize + 4);
+			_mm_storeu_ps(cTmp + i + j2*paddedSize + 4, _mm_add_ps(mmC, _mm_mul_ps(mmA, mmB)));
+			mmA = _mm_loadu_ps(aTmp + i + k2*paddedSize + 8);
+			mmC = _mm_loadu_ps(cTmp + i + j2*paddedSize + 8);
+			_mm_storeu_ps(cTmp + i + j2*paddedSize + 8, _mm_add_ps(mmC, _mm_mul_ps(mmA, mmB)));
+			mmA = _mm_loadu_ps(aTmp + i + k2*paddedSize + 12);
+			mmC = _mm_loadu_ps(cTmp + i + j2*paddedSize + 12);
+			_mm_storeu_ps(cTmp + i + j2*paddedSize + 12, _mm_add_ps(mmC, _mm_mul_ps(mmA, mmB)));
+		    }
+		}
+    
     unpad(n, paddedSize, blocksize, cTmp, C);
 
     free(aTmp); free(bTmp); free(cTmp);
