@@ -23,7 +23,7 @@ float* transpose(int n, int paddedSize, int blocksize, float *B, float*dst) {
 		}
 }
 
-/* Pads A to ignore matrix sizes. intrinsics? */
+/* Pads A to safely ignore matrix sizes. */
 float* pad(int n, int paddedSize, int blocksize, float *A, float *dst) {
     for ( int i = 0; i < n; i += blocksize ) 	
 	for ( int j = 0; j < n; j += blocksize ) 
@@ -59,15 +59,14 @@ void square_sgemm (int n, float* A, float* B, float* C)
     pad(n, paddedSize, blocksize, A, aTmp);
     float *cTmp = calloc(paddedSize*paddedSize, sizeof(float));
 
-    
     __m128 mmA, mmB, mmC;
     int k, j, k2, j2, i;
     for (k = 0; k < paddedSize; k += 4)
     	for (j = 0; j < paddedSize; j += 4) {
-	    mmC = _mm_loadu_ps(cTmp + i + j*n);
-	    mmB = _mm_load1_ps(bTmp + k*n + j);
-	    mmA = _mm_loadu_ps(aTmp + i + k*n);
-	    _mm_storeu_ps(cTmp + i + j*n, _mm_add_ps(mmC, _mm_mul_ps(mmA, mmB)));
+	    mmC = _mm_loadu_ps(cTmp + i + j*paddedSize);
+	    mmB = _mm_load1_ps(bTmp + k*paddedSize + j);
+	    mmA = _mm_loadu_ps(aTmp + i + k*paddedSize);
+	    _mm_storeu_ps(cTmp + i + j*paddedSize, _mm_add_ps(mmC, _mm_mul_ps(mmA, mmB)));
 	    /* mmA = _mm_loadu_ps(aTmp + i + k*n + 4); */
 	    /* mmC = _mm_loadu_ps(cTmp + i + j*n + 4); */
 	    /* _mm_storeu_ps(cTmp + i + j*n + 4, _mm_add_ps(mmC, _mm_mul_ps(mmA, mmB))); */
