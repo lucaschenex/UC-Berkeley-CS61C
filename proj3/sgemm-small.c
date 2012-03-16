@@ -20,7 +20,7 @@ void transpose(int n, float *src, float *dst) {
         for (j = 0; j < n; j += blocksize)
             for (k = i; (k < i + blocksize) && (k < n); k++)
                 for (m = j; (m < j + blocksize) && (m < n); m++)
-                    dst[m + k*n] = src[k + m*n];
+                    dst[m * n + k] = src[m + k * n];
 }
 
 /* This routine performs a sgemm operation
@@ -29,7 +29,7 @@ void transpose(int n, float *src, float *dst) {
  * On exit, A and B maintain their input values. */    
 void square_sgemm (int n, float *A, float *B, float *C)
 {
-    const int blocksize = 4, stride = 16;
+    const int blocksize = 16;
     int i, j, k, i2, j2;
     __m128 mmA, mmB, mmC, mmSum1, mmSum2, mmSum3, mmSum4;
     
@@ -47,7 +47,7 @@ void square_sgemm (int n, float *A, float *B, float *C)
                     mmSum2 = _mm_setzero_ps();
                     mmSum3 = _mm_setzero_ps();
                     mmSum4 = _mm_setzero_ps();
-                    for (k = 0; k < (n / stride) * stride; k += stride) {
+                    for (k = 0; k < (n & ~0xf); k += 0x10) {
                         mmA = _mm_loadu_ps(AT + i2*n + k);
                         mmB = _mm_loadu_ps(B + k + j2*n);
                         mmA = _mm_mul_ps(mmA, mmB);
@@ -73,7 +73,7 @@ void square_sgemm (int n, float *A, float *B, float *C)
                     mmSum1 = _mm_add_ps(mmSum1, mmSum3);
                     _mm_storeu_ps(buffer, mmSum1);
                     cij += buffer[0] + buffer[1] + buffer[2] + buffer[3];
-                    for (k = (n / stride * stride); k < n; k++) {
+                    for (k = n & ~0xf; k < n; k++) {
                         cij += AT[i2*n + k] * B[k + j2*n];
                     }
                     C[i2 + j2*n] = cij;
