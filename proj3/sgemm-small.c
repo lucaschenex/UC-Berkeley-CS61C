@@ -42,6 +42,7 @@ void square_sgemm (int n, float *A, float *B, float *C)
         for (j = 0; j < n; j += blocksize) {
             for (i2 = i; (i2 < i + blocksize) && (i2 < n); i2++) {
                 for (j2 = j; (j2 < j + blocksize) && (j2 < n); j2++) {
+                    float cij = C[i2 + j2*n];
                     mmSum1 = _mm_setzero_ps();
                     mmSum2 = _mm_setzero_ps();
                     mmSum3 = _mm_setzero_ps();
@@ -71,10 +72,11 @@ void square_sgemm (int n, float *A, float *B, float *C)
                     mmSum3 = _mm_add_ps(mmSum3, mmSum4);
                     mmSum1 = _mm_add_ps(mmSum1, mmSum3);
                     _mm_storeu_ps(buffer, mmSum1);
-                    C[i2 + j2*n] += buffer[0] + buffer[1] + buffer[2] + buffer[3];
+                    cij += buffer[0] + buffer[1] + buffer[2] + buffer[3];
                     for (k = (n / stride * stride); k < n; k++) {
-                        C[i2 + j2*n] += AT[i2*n + k] * B[k + j2*n];
+                        cij += AT[i2*n + k] * B[k + j2*n];
                     }
+                    C[i2 + j2*n] = cij;
                 }
             }
         }
