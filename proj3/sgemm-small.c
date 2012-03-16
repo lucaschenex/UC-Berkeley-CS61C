@@ -61,21 +61,23 @@ void square_sgemm (int n, float* A, float* B, float* C)
 
     __m128 mmA, mmB, mmC;
     int k, j, k2, j2, i;
-    for (k = 0; k < paddedSize; k += 4)
-    	for (j = 0; j < paddedSize; j += 4) {
-	    mmC = _mm_loadu_ps(cTmp + i + j*paddedSize);
+    for (k = 0; k < paddedSize; k++)
+	for (j = 0; j < paddedSize; j++) {
 	    mmB = _mm_load1_ps(bTmp + k*paddedSize + j);
-	    mmA = _mm_loadu_ps(aTmp + i + k*paddedSize);
-	    _mm_storeu_ps(cTmp + i + j*paddedSize, _mm_add_ps(mmC, _mm_mul_ps(mmA, mmB)));
-	    /* mmA = _mm_loadu_ps(aTmp + i + k*n + 4); */
-	    /* mmC = _mm_loadu_ps(cTmp + i + j*n + 4); */
-	    /* _mm_storeu_ps(cTmp + i + j*n + 4, _mm_add_ps(mmC, _mm_mul_ps(mmA, mmB))); */
-	    /* mmA = _mm_loadu_ps(aTmp + i + k*n + 8); */
-	    /* mmC = _mm_loadu_ps(cTmp + i + j*n + 8); */
-	    /* _mm_storeu_ps(cTmp + i + j*n + 8, _mm_add_ps(mmC, _mm_mul_ps(mmA, mmB))); */
-	    /* mmA = _mm_loadu_ps(aTmp + i + k*n + 12); */
-	    /* mmC = _mm_loadu_ps(cTmp + i + j*n + 12); */
-	    /* _mm_storeu_ps(cTmp + i + j*n + 12, _mm_add_ps(mmC, _mm_mul_ps(mmA, mmB))); */
+	    for (i = 0; i < paddedSize; i += blocksize) {
+		mmC = _mm_loadu_ps(cTmp + i + j*paddedSize);
+		mmA = _mm_loadu_ps(aTmp + i + k*paddedSize);
+		_mm_storeu_ps(cTmp + i + j*paddedSize, _mm_add_ps(mmC, _mm_mul_ps(mmA, mmB)));
+		mmA = _mm_loadu_ps(aTmp + i + k*paddedSize + 4);
+		mmC = _mm_loadu_ps(cTmp + i + j*paddedSize + 4);
+		_mm_storeu_ps(cTmp + i + j*paddedSize + 4, _mm_add_ps(mmC, _mm_mul_ps(mmA, mmB)));
+		mmA = _mm_loadu_ps(aTmp + i + k*paddedSize + 8);
+		mmC = _mm_loadu_ps(cTmp + i + j*paddedSize + 8);
+		_mm_storeu_ps(cTmp + i + j*paddedSize + 8, _mm_add_ps(mmC, _mm_mul_ps(mmA, mmB)));
+		mmA = _mm_loadu_ps(aTmp + i + k*paddedSize + 12);
+		mmC = _mm_loadu_ps(cTmp + i + j*paddedSize + 12);
+		_mm_storeu_ps(cTmp + i + j*paddedSize + 12, _mm_add_ps(mmC, _mm_mul_ps(mmA, mmB)));
+	    }
 	}
 
     unpad(n, paddedSize, blocksize, cTmp, C);
