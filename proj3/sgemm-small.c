@@ -15,6 +15,8 @@
 #include <stdio.h>
 #include <string.h>
 
+void square64_sgemm1 (float *A, float *B, float *C);
+
 /* Pads A to safely ignore matrix sizes. */
 void pad(int n, int padded_size, float *A, float *dst) {
     for (int i = 0; i < n; i++)
@@ -28,15 +30,7 @@ void unpad(int n, int padded_size, float *cTmp, float *dst) {
 }
 
 
-
-
-
-void square64_sgemm1 (float *A, float *B, float *C);
-
-/* This routine performs a sgemm operation
- *  C := C + A * B
- * where A, B, and C are lda-by-lda matrices stored in column-major format.
- * On exit, A and B maintain their input values. */    
+/** Hard coded for 64. */
 void square_sgemm (int n, float *A, float *B, float *C)
 {
     if (n == 64) {
@@ -45,189 +39,102 @@ void square_sgemm (int n, float *A, float *B, float *C)
     }
 
     const int stride = 16;
-    const int padded_size = (n + stride - 1) & ~(stride - 1);
+    const int npad = (n + stride - 1) & ~(stride - 1);
+    const int ninit = n;
 
-    float *Acpy = calloc(padded_size * padded_size, sizeof(float));
-    float *Bcpy = calloc(padded_size * padded_size, sizeof(float));
-    float *Ccpy = calloc(padded_size * padded_size, sizeof(float));
-    pad(n, padded_size, A, Acpy);
-    pad(n, padded_size, B, Bcpy);
-
-    for (int k = 0; k < padded_size; k += stride)
-        for (int j = 0; j < padded_size; j += stride)
-            for (int i = 0; i < padded_size; i += stride)
-                for (int k2 = k; k2 < k + stride; k2++)
-                    for (int j2 = j; j2 < j + stride; j2++) {
-                        float bkj = Bcpy[k2 + j2*padded_size];
-                        for (int i2 = i; i2 < i + stride; i2++) {
-                            Ccpy[i2 + j2*padded_size] += Acpy[i2 + k2*padded_size] * bkj;   
-                        }
-                    }
-
-    unpad(n, padded_size, Ccpy, C);
-}
-
-
-/** Hard coded for 64. */
-void square64_sgemm1 (float *A, float *B, float *C)
-{
-    const int n = 64, stride = 16;
-    __m128 mmA1, mmA2, mmA3, mmA4, mmB1, mmC1, mmC2, mmC3, mmC4, mmProd1, mmProd2, mmProd3, mmProd4;
+    float *Acpy, *Bcpy, *Ccpy;
+    float *Cinit = C;
+    if (n != npad) {
+        Acpy = calloc(npad * npad, sizeof(float));
+        Bcpy = calloc(npad * npad, sizeof(float));
+        Ccpy = calloc(npad * npad, sizeof(float));
+        pad(ninit, npad, A, Acpy);
+        pad(ninit, npad, B, Bcpy);
+        A = Acpy;
+        B = Bcpy;
+        C = Ccpy;
+        n = npad;
+    }
+    __m128 mmA1, mmA2, mmA3, mmA4, mmB, mmC1, mmC2, mmC3, mmC4, mmProd;
  
     for (int k = 0; k < n; k += stride)
     for (int j = 0; j < n; j += stride)
-        for (int i = 0; i < n; i += stride)
+    for (int i = 0; i < n; i += stride)
         for (int k2 = k; k2 < k + stride; k2++) {
                 mmA1 = _mm_load_ps(A + i + k2*n);
                 mmA2 = _mm_load_ps(A + i + k2*n + 4);
                 mmA3 = _mm_load_ps(A + i + k2*n + 8);
                 mmA4 = _mm_load_ps(A + i + k2*n + 12);
             for (int j2 = j; j2 < j + stride; j2++) {
-                mmB1 = _mm_load_ps1(B + k2 + j2*n);
+                mmB = _mm_load_ps1(B + k2 + j2*n);
                 
-                //mmA1 = _mm_load_ps(A + i + k2*n);
                 mmC1 = _mm_load_ps(C + i + j2*n);
-                mmProd1 = _mm_mul_ps(mmA1, mmB1);
-                mmC1 = _mm_add_ps(mmProd1, mmC1);
+                mmProd = _mm_mul_ps(mmA1, mmB);
+                mmC1 = _mm_add_ps(mmProd, mmC1);
                 _mm_store_ps(C + i + j2*n, mmC1);
 
-                //mmA2 = _mm_load_ps(A + i + k2*n + 4);
                 mmC2 = _mm_load_ps(C + i + j2*n + 4);
-                mmProd2 = _mm_mul_ps(mmA2, mmB1);
-                mmC2 = _mm_add_ps(mmProd2, mmC2);
+                mmProd = _mm_mul_ps(mmA2, mmB);
+                mmC2 = _mm_add_ps(mmProd, mmC2);
                 _mm_store_ps(C + i + j2*n + 4, mmC2);
                 
-                //mmA3 = _mm_load_ps(A + i + k2*n + 8);
                 mmC3 = _mm_load_ps(C + i + j2*n + 8);
-                mmProd3 = _mm_mul_ps(mmA3, mmB1);
-                mmC3 = _mm_add_ps(mmProd3, mmC3);
+                mmProd = _mm_mul_ps(mmA3, mmB);
+                mmC3 = _mm_add_ps(mmProd, mmC3);
                 _mm_store_ps(C + i + j2*n + 8, mmC3);
                 
-                //mmA4 = _mm_load_ps(A + i + k2*n + 12);
                 mmC4 = _mm_load_ps(C + i + j2*n + 12);
-                mmProd4 = _mm_mul_ps(mmA4, mmB1);
-                mmC4 = _mm_add_ps(mmProd4, mmC4);
+                mmProd = _mm_mul_ps(mmA4, mmB);
+                mmC4 = _mm_add_ps(mmProd, mmC4);
                 _mm_store_ps(C + i + j2*n + 12, mmC4);
             }
         }
+
+    if (ninit != npad) {
+        unpad(ninit, npad, Ccpy, Cinit);
+        free(Acpy);
+        free(Bcpy);
+        free(Ccpy);
+    }
 }
-
-
-/*
-void square64_sgemm1 (float *A, float *B, float *C)
-{
-    __m128 mmA1, mmA2, mmA3, mmA4, mmB1, mmB2, mmC1, mmC2, mmSum1, mmSum2;
-    
-    
-    // Transpose A. 
-    float *AT = calloc(64 * 64, sizeof(float));
-    for (int i = 0; i < 64; i += 16)
-        for (int j = 0; j < 64; j += 16)
-            for (int i2 = i; i2 < i + 16; i2++)
-                AT[i2 + j2*64] = A[j2 + i2*64];
-    
-
-
-    // Try to get 4x4 working. Muliply a 4x4 matrix with a 4x1 vector. 
-    mmA1 = _mm_loadu_ps(AT + i2*64);
-    mmA2 = _mm_loadu_ps(AT + (i2 + 1)*64);
-    mmA3 = _mm_loadu_ps(AT + (i2 + 2)*64);
-    mmA4 = _mm_loadu_ps(AT + (i2 + 3)*64);
-    
-    mmB = _mm_loadu_ps(B + k2 * 64 + j); //j goes by stride 4
-
-    mmV1 = _mm_mul_ss(mmA1, mmB);
-    mmV2 = _mm_mul_ss(mmA2, mmB);
-    mmV3 = _mm_mul_ss(mmA3, mmB);
-    mmV4 = _mm_mul_ss(mmA4, mmB);
-
-    mmV1 = _mm_hadd_ps(mmV1, mmV2);
-    mmV3 = _mm_hadd_ps(mmV3, mmV4);
-    mmV1 = _mm_hadd_ps(mmV1, mmV3); // this gives A*b
-
-
-    for (int kb = 0; 
-
-
-
-    for (int i = 0; i < 64; i += 4)
-    for (int k = 0; k < 64; k += 4)
-    for (int j = 0; j < 64; j += 4)
-        for (int i2 = i; i2 < i + 4; i2 += 4) {
-            // Load a 4x4 sub-block of A, each registers holds a row of A 
-            mmA1 = _mm_loadu_ps(AT + i2*64);
-            mmA2 = _mm_loadu_ps(AT + (i2 + 1)*64);
-            mmA3 = _mm_loadu_ps(AT + (i2 + 2)*64);
-            mmA4 = _mm_loadu_ps(AT + (i2 + 3)*64);
-            for (int k2 = k; k < 64; k ++) {
-            for (int j2 = j; j2 < j + 4; j2++) {
-                    // Load a column of B. 
-                    mmB = _mm_loadu_ps(B + k + j2*64);
-                    mmSum1 = _mm_load_ss(C + i + j*64);
-                    mmSum2 = _mm_setzero_ps();
-                for (int k = 0; k < 64; k += 8) {
-                mmA1 = _mm_loadu_ps(A + i*64 + k);
-                mmB1 = _mm_loadu_ps(B + k + j*64);
-                mmA1 = _mm_mul_ps(mmA1, mmB1);
-                mmSum1 = _mm_add_ps(mmSum1, mmA1);
-            
-                mmA2 = _mm_loadu_ps(A + i*64 + k + 4);
-                mmB2 = _mm_loadu_ps(B + k + j*64 + 4);
-                mmA2 = _mm_mul_ps(mmA2, mmB2);
-                mmSum2 = _mm_add_ps(mmSum2, mmA2);
-            }
-            mmSum1 = _mm_add_ps(mmSum1, mmSum2);
-            mmSum1 = _mm_hadd_ps(mmSum1, mmSum1);
-            mmSum1 = _mm_hadd_ps(mmSum1, mmSum1);
-            _mm_store_ss(C + i + j*64, mmSum1);
-        }
-    free(AT);
-}
-*/
 
 /** Hard coded for 64. */
-void square64_sgemm2 (float *A, float *B, float *C)
+void square64_sgemm1 (float *A, float *B, float *C)
 {
-    __m128 mmA1, mmA2, mmB1, mmB2, mmC1, mmC2, mmSum1, mmSum2;
-    
-    /* Transpose A. */
-    float *AT = calloc(64 * 64, sizeof(float));
-    for (int i = 0; i < 64; i += 16)
-        for (int j = 0; j < 64; j += 16)
-            for (int i2 = i; i2 < i + 16; i2++)
-                for (int j2 = j; j2 < j + 16; j2++)
-                    AT[i2 + j2*64] = A[j2 + i2*64];
-    
-    for (int i = 0; i < 64; i ++)
-        for (int j = 0; j < 64; j ++) {
-            mmSum1 = _mm_load_ss(C + i + j*64);
-            mmSum2 = _mm_setzero_ps();
-            for (int k = 0; k < 64; k += 16) {
-                mmA1 = _mm_loadu_ps(AT + i*64 + k);
-                mmB1 = _mm_loadu_ps(B + k + j*64);
-                mmA1 = _mm_mul_ps(mmA1, mmB1);
-                mmSum1 = _mm_add_ps(mmSum1, mmA1);
-            
-                mmA2 = _mm_loadu_ps(AT + i*64 + k + 4);
-                mmB2 = _mm_loadu_ps(B + k + j*64 + 4);
-                mmA2 = _mm_mul_ps(mmA2, mmB2);
-                mmSum2 = _mm_add_ps(mmSum2, mmA2);
-            
-                mmA1 = _mm_loadu_ps(AT + i*64 + k + 8);
-                mmB1 = _mm_loadu_ps(B + k + j*64 + 8);
-                mmA1 = _mm_mul_ps(mmA1, mmB1);
-                mmSum1 = _mm_add_ps(mmSum1, mmA1);
-            
-                mmA2 = _mm_loadu_ps(AT + i*64 + k + 12);
-                mmB2 = _mm_loadu_ps(B + k + j*64 + 12);
-                mmA2 = _mm_mul_ps(mmA2, mmB2);
-                mmSum2 = _mm_add_ps(mmSum2, mmA2);
+    const int n = 64, stride = 16;
+    __m128 mmA1, mmA2, mmA3, mmA4, mmB, mmC1, mmC2, mmC3, mmC4, mmProd;
+ 
+    for (int k = 0; k < n; k += stride)
+    for (int j = 0; j < n; j += stride)
+    for (int i = 0; i < n; i += stride)
+        for (int k2 = k; k2 < k + stride; k2++) {
+                mmA1 = _mm_load_ps(A + i + k2*n);
+                mmA2 = _mm_load_ps(A + i + k2*n + 4);
+                mmA3 = _mm_load_ps(A + i + k2*n + 8);
+                mmA4 = _mm_load_ps(A + i + k2*n + 12);
+            for (int j2 = j; j2 < j + stride; j2++) {
+                mmB = _mm_load_ps1(B + k2 + j2*n);
+                
+                mmC1 = _mm_load_ps(C + i + j2*n);
+                mmProd = _mm_mul_ps(mmA1, mmB);
+                mmC1 = _mm_add_ps(mmProd, mmC1);
+                _mm_store_ps(C + i + j2*n, mmC1);
+
+                mmC2 = _mm_load_ps(C + i + j2*n + 4);
+                mmProd = _mm_mul_ps(mmA2, mmB);
+                mmC2 = _mm_add_ps(mmProd, mmC2);
+                _mm_store_ps(C + i + j2*n + 4, mmC2);
+                
+                mmC3 = _mm_load_ps(C + i + j2*n + 8);
+                mmProd = _mm_mul_ps(mmA3, mmB);
+                mmC3 = _mm_add_ps(mmProd, mmC3);
+                _mm_store_ps(C + i + j2*n + 8, mmC3);
+                
+                mmC4 = _mm_load_ps(C + i + j2*n + 12);
+                mmProd = _mm_mul_ps(mmA4, mmB);
+                mmC4 = _mm_add_ps(mmProd, mmC4);
+                _mm_store_ps(C + i + j2*n + 12, mmC4);
             }
-            mmSum1 = _mm_add_ps(mmSum1, mmSum2);
-            mmSum1 = _mm_hadd_ps(mmSum1, mmSum1);
-            mmSum1 = _mm_hadd_ps(mmSum1, mmSum1);
-            _mm_store_ss(C + i + j*64, mmSum1);
         }
-    free(AT);
 }
 
