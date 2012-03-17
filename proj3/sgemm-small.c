@@ -12,37 +12,28 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
+/* Transpose with padding. */
 void transpose(int n, int padded_size, float *src, float *dst) {
-    const int blocksize = 400;
-    int i,j,k,m;
-    for (i = 0; i < n; i += blocksize)
-        for (j = 0; j < n; j += blocksize)
-            for (k = i; (k < i + blocksize) && (k < n); k++)
-                for (m = j; (m < j + blocksize) && (m < n); m++)
+    const int blocksize = 200;
+    for (int i = 0; i < n; i += blocksize)
+        for (int j = 0; j < n; j += blocksize)
+            for (int k = i; (k < i + blocksize) && (k < n); k++)
+                for (int m = j; (m < j + blocksize) && (m < n); m++)
                     dst[m + k*padded_size] = src[k + m*n];
 }
 
 /* Pads A to safely ignore matrix sizes. */
 void pad(int n, int padded_size, float *A, float *dst) {
-        const int blocksize = 400;
-        for (int i = 0; i < n; i += blocksize)
-            for (int j = 0; j < n; j += blocksize)
-                for (int k = i; (k < (i + blocksize)) && (k < n); k++)
-                    for (int m = j; (m < (j + blocksize)) && (m < n); m++) {
-                        dst[m + k*padded_size] = A[m + k*n];
-                    }
+    for (int i = 0; i < n; i++)
+        memcpy(dst + i*padded_size, A + i*n, n * sizeof(float));
 }
 
 /* Unpads C to restore matrix sizes. intrinsics? */
 void unpad(int n, int padded_size, float *cTmp, float *dst) {
-        const int blocksize = 400;
-        for (int i = 0; i < n; i += blocksize)
-            for (int j = 0; j < n; j += blocksize)
-                for (int k = i; (k < (i + blocksize)) && (k < n); k++)
-                    for (int m = j; (m < (j + blocksize)) && (m < n); m++) {
-                        dst[m + k*n] = cTmp[m + k*padded_size];
-                    }
+    for (int i = 0; i < n; i++)
+        memcpy(dst + i*n, cTmp + i*padded_size, n * sizeof(float));
 }
 
 /* This routine performs a sgemm operation
