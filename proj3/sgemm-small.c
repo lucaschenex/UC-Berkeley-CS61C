@@ -9,6 +9,7 @@
  */
 
 #include <emmintrin.h>
+#include <pmmintrin.h>
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -19,9 +20,9 @@ void transpose(int n, int padded_size, float *src, float *dst) {
     const int blocksize = 200;
     for (int i = 0; i < n; i += blocksize)
         for (int j = 0; j < n; j += blocksize)
-            for (int k = i; (k < i + blocksize) && (k < n); k++)
-                for (int m = j; (m < j + blocksize) && (m < n); m++)
-                    dst[m + k*padded_size] = src[k + m*n];
+            for (int i2 = i; (i2 < i + blocksize) && (i2 < n); i2++)
+                for (int j2 = j; (j2 < j + blocksize) && (j2 < n); j2++)
+                    dst[i2 + j2*padded_size] = src[j2 + i2*n];
 }
 
 /* Pads A to safely ignore matrix sizes. */
@@ -42,67 +43,66 @@ void unpad(int n, int padded_size, float *cTmp, float *dst) {
  * On exit, A and B maintain their input values. */    
 void square_sgemm (int n, float *A, float *B, float *C)
 {
-    const int blocksize = 16, stride = 16;
-    int i, j, k, i2, j2;
-    __m128 mmA, mmB, mmC, mmSum1, mmSum2, mmSum3, mmSum4;
-    
-    const int padded_size = (n + blocksize - 1) & ~(blocksize - 1);
-    float *C_final = C;
-    
-    float *AT = calloc(padded_size * padded_size, sizeof(float));
-    float *BT = calloc(padded_size * padded_size, sizeof(float));
-    C = calloc(padded_size * padded_size, sizeof(float));
-    transpose(n, padded_size, A, AT);
-    pad(n, padded_size, B, BT);
-    B = BT;
-
-    float buffer[4] = {0};
-    
-    for (i = 0; i < padded_size; i += blocksize) {
-        for (j = 0; j < padded_size; j += blocksize) {
-            for (i2 = i; i2 < i + blocksize; i2++) {
-                for (j2 = j; j2 < j + blocksize; j2++) {
-                    float cij = C[i2 + j2*padded_size];
-                    mmSum1 = _mm_setzero_ps();
-                    mmSum2 = _mm_setzero_ps();
-                    mmSum3 = _mm_setzero_ps();
-                    mmSum4 = _mm_setzero_ps();
-                    for (k = 0; k < padded_size; k += stride) {
-                        mmA = _mm_loadu_ps(AT + i2*padded_size + k);
-                        mmB = _mm_loadu_ps(B + k + j2*padded_size);
-                        mmA = _mm_mul_ps(mmA, mmB);
-                        mmSum1 = _mm_add_ps(mmSum1, mmA);
-                    
-                        mmA = _mm_loadu_ps(AT + i2*padded_size + k + 4);
-                        mmB = _mm_loadu_ps(B + k + j2*padded_size + 4);
-                        mmA = _mm_mul_ps(mmA, mmB);
-                        mmSum2 = _mm_add_ps(mmSum2, mmA);
-                    
-                        mmA = _mm_loadu_ps(AT + i2*padded_size + k + 8);
-                        mmB = _mm_loadu_ps(B + k + j2*padded_size + 8);
-                        mmA = _mm_mul_ps(mmA, mmB);
-                        mmSum3 = _mm_add_ps(mmSum3, mmA);
-                    
-                        mmA = _mm_loadu_ps(AT + i2*padded_size + k + 12);
-                        mmB = _mm_loadu_ps(B + k + j2*padded_size + 12);
-                        mmA = _mm_mul_ps(mmA, mmB);
-                        mmSum4 = _mm_add_ps(mmSum4, mmA);
-                    }    
-                    mmSum1 = _mm_add_ps(mmSum1, mmSum2);
-                    mmSum3 = _mm_add_ps(mmSum3, mmSum4);
-                    mmSum1 = _mm_add_ps(mmSum1, mmSum3);
-                    _mm_storeu_ps(buffer, mmSum1);
-                    cij += buffer[0] + buffer[1] + buffer[2] + buffer[3];
-                    C[i2 + j2*padded_size] = cij;
-                }
-            }
-        }
+    const int stride = 16;
+    int outer_stride;
+    if (n <= 64) {
+        outer_stride = 16;
+    } else if (n <= 256) {
+        outer_stride = 8;
+    } else if (n <= 512) {
+        outer_stride = 4; 
+    } else {
+        outer_stride = 2;
     }
 
-    unpad(n, padded_size, C, C_final);
+    __m128 mmA1, mmA2, mmB1, mmB2, mmC1, mmC2, mmSum1, mmSum2;
+    
+    const int padded_size = (n + stride  - 1) & ~(stride - 1);
+    
+    float *AT = calloc(padded_size * padded_size, sizeof(float));
+    float *Bcpy = calloc(padded_size * padded_size, sizeof(float));
+    float* Ccpy = calloc(padded_size * padded_size, sizeof(float));
+    
+    transpose(n, padded_size, A, AT);
+    pad(n, padded_size, B, Bcpy);
+
+    for (int i = 0; i < padded_size; i += stride)
+        for (int j = 0; j < padded_size; j += stride)
+            for (int i2 = i; i2 < i + stride; i2++)
+                for (int j2 = j; j2 < j + stride; j2++) {
+                    mmSum1 = _mm_load_ss(Ccpy + i2 + j2*padded_size);
+                    mmSum2 = _mm_setzero_ps();
+                    for (int k = 0; k < padded_size; k += stride) {
+                        mmA1 = _mm_loadu_ps(AT + i2*padded_size + k);
+                        mmB1 = _mm_loadu_ps(Bcpy + k + j2*padded_size);
+                        mmA1 = _mm_mul_ps(mmA1, mmB1);
+                        mmSum1 = _mm_add_ps(mmSum1, mmA1);
+                    
+                        mmA2 = _mm_loadu_ps(AT + i2*padded_size + k + 4);
+                        mmB2 = _mm_loadu_ps(Bcpy + k + j2*padded_size + 4);
+                        mmA2 = _mm_mul_ps(mmA2, mmB2);
+                        mmSum2 = _mm_add_ps(mmSum2, mmA2);
+                    
+                        mmA1 = _mm_loadu_ps(AT + i2*padded_size + k + 8);
+                        mmB1 = _mm_loadu_ps(Bcpy + k + j2*padded_size + 8);
+                        mmA1 = _mm_mul_ps(mmA1, mmB1);
+                        mmSum1 = _mm_add_ps(mmSum1, mmA1);
+                    
+                        mmA2 = _mm_loadu_ps(AT + i2*padded_size + k + 12);
+                        mmB2 = _mm_loadu_ps(Bcpy + k + j2*padded_size + 12);
+                        mmA2 = _mm_mul_ps(mmA2, mmB2);
+                        mmSum2 = _mm_add_ps(mmSum2, mmA2);
+                    }
+                    mmSum1 = _mm_add_ps(mmSum1, mmSum2);   
+                    mmSum1 = _mm_hadd_ps(mmSum1, mmSum1);
+                    mmSum1 = _mm_hadd_ps(mmSum1, mmSum1);
+                    _mm_store_ss(Ccpy + i2 + j2*padded_size, mmSum1);
+                }
+    
+    unpad(n, padded_size, Ccpy, C);
 
     free(AT);
-    free(BT);
-    free(C);
+    free(Bcpy);
+    free(Ccpy);
 }
 
