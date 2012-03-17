@@ -31,7 +31,7 @@ void unpad(int n, int padded_size, float *cTmp, float *dst) {
 
 
 
-void square64_sgemm (float *A, float *B, float *C);
+void square64_sgemm1 (float *A, float *B, float *C);
 
 /* This routine performs a sgemm operation
  *  C := C + A * B
@@ -40,7 +40,7 @@ void square64_sgemm (float *A, float *B, float *C);
 void square_sgemm (int n, float *A, float *B, float *C)
 {
     if (n == 64) {
-        square64_sgemm(A, B, C);
+        square64_sgemm1(A, B, C);
         return;
     }
 
@@ -69,7 +69,77 @@ void square_sgemm (int n, float *A, float *B, float *C)
 
 
 /** Hard coded for 64. */
-void square64_sgemm (float *A, float *B, float *C)
+void square64_sgemm1 (float *A, float *B, float *C)
+{
+    __m128 mmA1, mmA2, mmA3, mmA4, mmB1, mmB2, mmC1, mmC2, mmSum1, mmSum2;
+    
+    
+    /* Transpose A. */
+    float *AT = calloc(64 * 64, sizeof(float));
+    for (int i = 0; i < 64; i += 16)
+        for (int j = 0; j < 64; j += 16)
+            for (int i2 = i; i2 < i + 16; i2++)
+                AT[i2 + j2*64] = A[j2 + i2*64];
+    
+
+
+
+
+
+    /* Try to get 4x4 working. */
+    mmA1 = _mm_loadu_ps(AT + i2*64);
+    mmA2 = _mm_loadu_ps(AT + (i2 + 1)*64);
+    mmA3 = _mm_loadu_ps(AT + (i2 + 2)*64);
+    mmA4 = _mm_loadu_ps(AT + (i2 + 3)*64);
+    
+    mmB = _mm_loadu_ps(B + k2 * 64 + j); //j goes by stride 4
+
+    mmV1 = _mm_mul_ss(mmA1, mmB);
+    mmV2 = _mm_mul_ss(mmA2, mmB);
+    mmV3 = _mm_mul_ss(mmA3, mmB);
+    mmV4 = _mm_mul_ss(mmA4, mmB);
+
+    mmV1 = _mm_hadd_ps(mmV1, mmV2);
+    mmV3 = _mm_hadd_ps(mmV3, mmV4);
+    mmV1 = _mm_hadd_ps(mmV1, mmV3); // this give A*b
+
+
+    for (int i = 0; i < 64; i += 4)
+    for (int k = 0; k < 64; k += 4)
+    for (int j = 0; j < 64; j += 4)
+        for (int i2 = i; i2 < i + 4; i2 += 4) {
+            /* Load a 4x4 sub-block of A, each registers holds a row of A */
+            mmA1 = _mm_loadu_ps(AT + i2*64);
+            mmA2 = _mm_loadu_ps(AT + (i2 + 1)*64);
+            mmA3 = _mm_loadu_ps(AT + (i2 + 2)*64);
+            mmA4 = _mm_loadu_ps(AT + (i2 + 3)*64);
+            for (int k2 = k; k < 64; k ++) {
+            for (int j2 = j; j2 < j + 4; j2++) {
+                    /* Load a column of B. */
+                    mmB = _mm_loadu_ps(B + k + j2*64);
+                    mmSum1 = _mm_load_ss(C + i + j*64);
+                    mmSum2 = _mm_setzero_ps();
+                for (int k = 0; k < 64; k += 8) {
+                mmA1 = _mm_loadu_ps(A + i*64 + k);
+                mmB1 = _mm_loadu_ps(B + k + j*64);
+                mmA1 = _mm_mul_ps(mmA1, mmB1);
+                mmSum1 = _mm_add_ps(mmSum1, mmA1);
+            
+                mmA2 = _mm_loadu_ps(A + i*64 + k + 4);
+                mmB2 = _mm_loadu_ps(B + k + j*64 + 4);
+                mmA2 = _mm_mul_ps(mmA2, mmB2);
+                mmSum2 = _mm_add_ps(mmSum2, mmA2);
+            }
+            mmSum1 = _mm_add_ps(mmSum1, mmSum2);
+            mmSum1 = _mm_hadd_ps(mmSum1, mmSum1);
+            mmSum1 = _mm_hadd_ps(mmSum1, mmSum1);
+            _mm_store_ss(C + i + j*64, mmSum1);
+        }
+    free(AT);
+}
+
+/** Hard coded for 64. */
+void square64_sgemm2 (float *A, float *B, float *C)
 {
     __m128 mmA1, mmA2, mmB1, mmB2, mmC1, mmC2, mmSum1, mmSum2;
     
