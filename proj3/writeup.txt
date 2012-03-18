@@ -1,0 +1,23 @@
+How we used SSE registers:
+
+Our loop is ordered kji and we used a stride of 16 for loop tiling (an outer kji loop advances by the stride length and an inner kj loop advances by 1). The innermost i loop is unrolled using SSE instructions.
+
+Within the inner k loop, we load a subcolumn of A into 4 XMM registers.
+XMM1 gets (A_ik; A_i+1,k; A_i+2,k; A_i+3,k), XMM2 gets the next 4 elements in column k, and so on.
+Since we won't reload A in the innermost loop, this is an example of register-blocking.
+
+Within the innermost j loop, we load B_jk into all 4 elments of a XMM register.
+For each of the 4 A registers, we compute <A_ik> * B_kj using SIMD mulitply.
+Basically, this gives <A_ik * B_kj, ..., A_i+15,k * B_kj>.
+
+Then we load a subcolum of C in 4 XMM registers, representing <C_ij, ..., C_i+15,j>.
+We add the products to it, and then store back -- all done using SIMD.
+The end result is that we've now computed <A_ik * B_kj + C_ij, ..., A_i+15,k * B_kj, C_i+15,j>.
+In other words, the partial sum of one of C's subcolumns.
+
+
+How we handled finges:
+We zero-pad the input matrices to a size divisible by stride length, which allowed us to use SSE operations.
+Afterwards, we unpad the result matrix C and copy it back into the original address.
+
+
