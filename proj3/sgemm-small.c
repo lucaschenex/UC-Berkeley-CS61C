@@ -26,13 +26,13 @@
 void squarepad_sgemm(int n, float *A, float *B, float *C);
 
 /* Pads A to safely ignore matrix sizes. */
-void pad(int n, int padded_size, float *A, float *dst) {
+inline void pad(int n, int padded_size, float *A, float *dst) {
     for (int i = 0; i < n; i++)
         memcpy(dst + i*padded_size, A + i*n, n * sizeof(float));
 }
 
 /* Unpads C to restore matrix sizes. */
-void unpad(int n, int padded_size, float *cTmp, float *dst) {
+inline void unpad(int n, int padded_size, float *cTmp, float *dst) {
     for (int i = 0; i < n; i++)
         memcpy(dst + i*n, cTmp + i*padded_size, n * sizeof(float));
 }
@@ -61,8 +61,7 @@ void square_sgemm(int n, float *A, float *B, float *C) {
 }
 
 /** Assumes input matrix has dimension n divisible by STRIDE. */
-void squarepad_sgemm (const int n, float *A, float *B, float *C)
-{
+inline void squarepad_sgemm (const int n, float *A, float *B, float *C) {
     int j_block;
     if (n == 64)
          j_block = BLOCK_64;
