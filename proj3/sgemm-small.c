@@ -15,6 +15,7 @@
 /* Determines cache blocking (must divide 16 in the general case). */
 #define BLOCK 16
 #define BLOCK_64 64
+#define BLOCK_512 8
 #define BLOCK_768 4
 
 /* How much to unroll the i loop. */
@@ -25,16 +26,16 @@
 /* Forward declaration. */
 void squarepad_sgemm(int n, float *A, float *B, float *C);
 
-/* Pads A to safely ignore matrix sizes. */
-inline void pad(int n, int padded_size, float *A, float *dst) {
+/* Pads src to safely ignore matrix sizes. */
+inline void pad(int n, int padded_size, float *src, float *dst) {
     for (int i = 0; i < n; i++)
-        memcpy(dst + i*padded_size, A + i*n, n * sizeof(float));
+        memcpy(dst + i*padded_size, src + i*n, n * sizeof(float));
 }
 
-/* Unpads C to restore matrix sizes. */
-inline void unpad(int n, int padded_size, float *cTmp, float *dst) {
+/* Unpads src to restore matrix sizes. */
+inline void unpad(int n, int padded_size, float *src, float *dst) {
     for (int i = 0; i < n; i++)
-        memcpy(dst + i*n, cTmp + i*padded_size, n * sizeof(float));
+        memcpy(dst + i*n, src + i*padded_size, n * sizeof(float));
 }
 
 /* C = C + AB. */
@@ -66,8 +67,10 @@ inline void squarepad_sgemm (const int n, float *A, float *B, float *C) {
     int j_block;
     if (n == 64)
          j_block = BLOCK_64;
-    else if (n < 768)
+    else if (n < 512)
         j_block = BLOCK;
+    else if (n < 768)
+        j_block = BLOCK_512;
     else
         j_block = BLOCK_768;
     
