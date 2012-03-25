@@ -49,6 +49,7 @@ void square_sgemm(int n, float *A, float *B, float *C) {
         
         pad(n, npad, A, Acpy);
         pad(n, npad, B, Bcpy);
+        pad(n, npad, C, Ccpy);
     
         /* Call matrix multiply on padded matrices. */
         squarepad_sgemm(npad, Acpy, Bcpy, Ccpy);
