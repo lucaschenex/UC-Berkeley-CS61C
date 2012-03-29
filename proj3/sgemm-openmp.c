@@ -32,14 +32,14 @@ void squarepad_sgemm(int n, float *A, float *B, float *C);
 
 /* Pads src to safely ignore matrix sizes. */
 inline void pad(int n, int padded_size, float *src, float *dst) {
-    #pragma omp for
+    #pragma omp parallel for
     for (int i = 0; i < n; i++)
         memcpy(dst + i*padded_size, src + i*n, n * sizeof(float));
 }
 
 /* Unpads src to restore matrix sizes. */
 inline void unpad(int n, int padded_size, float *src, float *dst) {
-    #pragma omp for
+    #pragma omp parallel for
     for (int i = 0; i < n; i++)
         memcpy(dst + i*n, src + i*padded_size, n * sizeof(float));
 }
@@ -136,6 +136,7 @@ inline void squarepad_sgemm (const int n, float *A, float *B, float *C) {
                 _mm_store_ps(cTmp + i + j2*n + 12, mmC4);
             }
         }
+
     #pragma omp critical
     {
     for (int i = 0; i < (n * n)/I_STRIDE * I_STRIDE; i += I_STRIDE) {
@@ -143,7 +144,7 @@ inline void squarepad_sgemm (const int n, float *A, float *B, float *C) {
         mmA2 = _mm_load_ps(C + i + 4);
         mmA3 = _mm_load_ps(C + i + 8);
         mmA4 = _mm_load_ps(C + i + 12);
-        
+         
         mmC1 = _mm_load_ps(cTmp + i);
         mmC2 = _mm_load_ps(cTmp + i + 4);
         mmC3 = _mm_load_ps(cTmp + i + 8);
@@ -153,7 +154,7 @@ inline void squarepad_sgemm (const int n, float *A, float *B, float *C) {
         mmC2 = _mm_add_ps(mmA2, mmC2);
         mmC3 = _mm_add_ps(mmA3, mmC3);
         mmC4 = _mm_add_ps(mmA4, mmC4);
-         
+        
         _mm_store_ps(C + i, mmC1);
         _mm_store_ps(C + i + 4, mmC2);
         _mm_store_ps(C + i + 8, mmC3);
@@ -161,7 +162,9 @@ inline void squarepad_sgemm (const int n, float *A, float *B, float *C) {
     }
     for (int i = (n * n)/ I_STRIDE * I_STRIDE; i < n; i++)
         C[i] += cTmp[i];
+    
     }
+
     free(cTmp);
     }
 }
