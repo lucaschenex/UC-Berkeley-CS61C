@@ -40,8 +40,8 @@ inline void pad(int n, int padded_size, float *src, float *dst) {
 
 void transpose(int n, int padded_size, float *src, float *dst) {
     #pragma omp parallel for
-    for ( int i = 0; i < n; i++ )
-    for ( int j = 0; j < n; j++ )
+    for ( int i = 0; i < n; i ++ )
+    for ( int j = 0; j < n; j ++ )
 	dst[j + i*padded_size] = src[i + j*n];
 }
 
@@ -82,16 +82,17 @@ inline void squarepad_sgemm (const int n, float *A, float *B, float *C) {
 
     #pragma omp parallel
     {
-	__m128 mmA1, mmA2, mmA3, mmA4, mmB1, mmB2, mmB3, mmB4, sum;
-	__m128 mmProd1, mmProd2, mmProd3, mmProd4;
-	float tempSum[4];
+	__m128 mmA1, mmA2, mmA3, mmA4, mmB1, mmB2, mmB3, mmB4;
+	__m128 mmProd1, mmProd2, mmProd3, mmProd4, sum0, sum1;
+	float tempSum0[4], tempSum1[4];
 
 	#pragma omp for 
 	for (int j = 0; j < n; j += J_STRIDE)
 	for (int i = 0; i < n; i += I_STRIDE)
-	for (int j2 = j; j2 < (j + J_STRIDE); j2++)
-        for (int i2 = i; i2 < (i + I_STRIDE); i2++) {
-	    sum = _mm_set1_ps(0);
+        for (int j2 = j; j2 < (j + J_STRIDE); j2++)
+        for (int i2 = i; i2 < (i + I_STRIDE); i2 += 2) {
+	    sum0 = _mm_set1_ps(0);
+	    sum1 = _mm_set1_ps(0);
 	    for (int k = 0; k < n; k += K_STRIDE) {
 		mmB1 = _mm_load_ps(B + j2*n + k);
 		mmB2 = _mm_load_ps(B + j2*n + k + 4);
@@ -108,13 +109,30 @@ inline void squarepad_sgemm (const int n, float *A, float *B, float *C) {
 		mmProd3 = _mm_mul_ps(mmA3, mmB3);
 		mmProd4 = _mm_mul_ps(mmA4, mmB4);
 
+		mmA1 = _mm_load_ps(A + (i2 + 1)*n + k);
+		mmA2 = _mm_load_ps(A + (i2 + 1)*n + k + 4);
+		mmA3 = _mm_load_ps(A + (i2 + 1)*n + k + 8);
+		mmA4 = _mm_load_ps(A + (i2 + 1)*n + k + 12);
+		
 		mmProd1 = _mm_add_ps(mmProd1, mmProd2);
 		mmProd3 = _mm_add_ps(mmProd3, mmProd4);
 		mmProd1 = _mm_add_ps(mmProd1, mmProd3);
-		sum = _mm_add_ps(mmProd1, sum);
+		sum0 = _mm_add_ps(mmProd1, sum0);
+		    
+		mmProd1 = _mm_mul_ps(mmA1, mmB1);
+		mmProd2 = _mm_mul_ps(mmA2, mmB2);
+		mmProd3 = _mm_mul_ps(mmA3, mmB3);
+		mmProd4 = _mm_mul_ps(mmA4, mmB4);
+
+		mmProd1 = _mm_add_ps(mmProd1, mmProd2);
+		mmProd3 = _mm_add_ps(mmProd3, mmProd4);
+		mmProd1 = _mm_add_ps(mmProd1, mmProd3);
+		sum1 = _mm_add_ps(mmProd1, sum1);
 	    }
-	    _mm_store_ps(tempSum, sum);
-	    C[j2*n + i2] += tempSum[0] + tempSum[1] + tempSum[2] + tempSum[3];	
+	    _mm_store_ps(tempSum0, sum0);
+	    _mm_store_ps(tempSum1, sum1);
+	    C[j2*n + i2] += tempSum0[0] + tempSum0[1] + tempSum0[2] + tempSum0[3];
+	    C[j2*n + i2 + 1] += tempSum1[0] + tempSum1[1] + tempSum1[2] + tempSum1[3];	
 	}
     }
 }
