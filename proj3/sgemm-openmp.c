@@ -18,6 +18,7 @@
 #define BLOCK_BIG 16
 #define BLOCK_MED 8
 #define BLOCK_SML 4
+#define BLOCK_ONE 1
 
 /* How much to unroll the k loop. */
 #define K_STRIDE 16
@@ -30,7 +31,7 @@ void squarepad_sgemm(int n, float *A, float *B, float *C);
 
 /* Pads src to safely ignore matrix sizes. */
 inline void pad(int n, int padded_size, float *src, float *dst) {
-    #pragma omp parallel for
+#pragma omp parallel for
     for (int i = 0; i < n; i++)
         memcpy(dst + i*padded_size, src + i*n, n * sizeof(float));
 }
@@ -79,7 +80,7 @@ void square_sgemm(int n, float *A, float *B, float *C) {
 
 /** Assumes input matrix has dimension n divisible by STRIDE. */
 inline void squarepad_sgemm (const int n, float *A, float *B, float *C) {
-    omp_set_num_threads(8);
+    omp_set_num_threads(NUM_THREADS);
     #pragma omp parallel
     {
 	__m128 mmA1, mmA2, mmA3, mmA4, mmB1, mmB2, mmB3, mmB4, mmC;
@@ -98,11 +99,14 @@ inline void squarepad_sgemm (const int n, float *A, float *B, float *C) {
 	} else if (n < 801) {
 	    I_STRIDE = BLOCK_MED;
 	    J_STRIDE = BLOCK_MED;
-	} else {
+	} else if (n < 830) {
 	    I_STRIDE = BLOCK_MED;
 	    J_STRIDE = BLOCK_SML;
+	} else {
+	    I_STRIDE = BLOCK_MED;
+	    J_STRIDE = BLOCK_ONE;
 	}
-	#pragma omp for 
+        #pragma omp for schedule(dynamic) nowait
 	for (int j = 0; j < n; j += J_STRIDE)
 	for (int i = 0; i < n; i += I_STRIDE)
 	for (int j2 = j; j2 < (j + J_STRIDE); j2++)
